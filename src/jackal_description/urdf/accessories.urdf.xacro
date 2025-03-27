@@ -25,6 +25,7 @@
   <xacro:include filename="$(find jackal_description)/urdf/accessories/hokuyo_ust10.urdf.xacro" />
   <xacro:include filename="$(find jackal_description)/urdf/accessories/vlp16_mount.urdf.xacro" />
   <xacro:include filename="$(find jackal_description)/urdf/accessories/hdl32_mount.urdf.xacro" />
+  <xacro:include filename="$(find jackal_description)/urdf/accessories/wheel_drop_sensor.urdf.xacro" />
 
   <!--
     Add Microstrain IMU. By default the Jackal comes equipped with an IMU linked to "imu_link". These extra
@@ -496,5 +497,63 @@
       <turnGravityOff>false</turnGravityOff>
     </gazebo>
   </xacro:if>
+
+  <!-- Wheel drop sensors -->
+  <xacro:property name="fender_width" value="0.43"/>
+  <xacro:property name="fender_surface_z_coord" value="${chassis_height-0.034}"/>
+  <xacro:property name="wheel_drop_sensor_length" value="0.03"/>
+  <xacro:property name="wheel_drop_sensor_width" value="0.01"/>
+  <xacro:property name="wheel_drop_sensor_height" value="0.01"/>
+  <xacro:property name="wheel_drop_sensor_x_offset" value="${chassis_length/2}"/>
+  <xacro:property name="wheel_drop_sensor_y_offset" value="${fender_width/2}"/>
+  <xacro:property name="wheel_drop_sensor_z_offset" value="${fender_surface_z_coord+wheel_drop_sensor_height/2}"/>
+
+  <xacro:wheel_drop_sensor 
+    prefix="front_left"
+    parent_link="chassis_link">
+    <origin xyz="${wheel_drop_sensor_x_offset} ${wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${PI/2}"/>
+    <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
+    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+  </xacro:wheel_drop_sensor>
+
+  <xacro:wheel_drop_sensor 
+    prefix="front_right"
+    parent_link="chassis_link">
+    <origin xyz="${wheel_drop_sensor_x_offset} ${-wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${-PI/2}"/>
+    <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
+    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+  </xacro:wheel_drop_sensor>
+
+  <xacro:wheel_drop_sensor 
+    prefix="rear_left"
+    parent_link="chassis_link">
+    <origin xyz="${-wheel_drop_sensor_x_offset} ${wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${PI/2}"/>
+    <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
+    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+  </xacro:wheel_drop_sensor>
+
+  <xacro:wheel_drop_sensor 
+    prefix="rear_right"
+    parent_link="chassis_link">
+    <origin xyz="${-wheel_drop_sensor_x_offset} ${-wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${-PI/2}"/>
+    <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
+    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+  </xacro:wheel_drop_sensor>
+
+  <xacro:wheel_drop_sensor 
+    prefix="front_centre"
+    parent_link="chassis_link">
+    <origin xyz="${wheel_drop_sensor_x_offset+0.03} 0 ${wheel_drop_sensor_z_offset-0.03+0.002}" rpy="${-PI/4} 0 ${PI/2}"/>
+    <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
+    <pose>0 0 0 0 ${PI/2} 0</pose>
+  </xacro:wheel_drop_sensor>
+
+  <xacro:wheel_drop_sensor 
+    prefix="rear_centre"
+    parent_link="chassis_link">
+    <origin xyz="${-(wheel_drop_sensor_x_offset+0.03)} 0 ${wheel_drop_sensor_z_offset-0.03+0.002}" rpy="${PI/4} 0 ${PI/2}"/>
+    <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
+    <pose>0 0 0 0 ${PI/2} 0</pose>
+  </xacro:wheel_drop_sensor>
 
 </robot>
