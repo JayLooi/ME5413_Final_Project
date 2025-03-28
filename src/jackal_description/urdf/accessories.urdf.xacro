@@ -511,33 +511,33 @@
   <xacro:wheel_drop_sensor 
     prefix="front_left"
     parent_link="chassis_link">
-    <origin xyz="${wheel_drop_sensor_x_offset} ${wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${PI/2}"/>
+    <origin xyz="${wheel_drop_sensor_x_offset} ${wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="${PI/4} 0 0"/>
     <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
-    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+    <pose>0 0 0 0 ${PI/2} 0</pose>
   </xacro:wheel_drop_sensor>
 
   <xacro:wheel_drop_sensor 
     prefix="front_right"
     parent_link="chassis_link">
-    <origin xyz="${wheel_drop_sensor_x_offset} ${-wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${-PI/2}"/>
+    <origin xyz="${wheel_drop_sensor_x_offset} ${-wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="${-PI/4} 0 0"/>
     <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
-    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+    <pose>0 0 0 0 ${PI/2} 0</pose>
   </xacro:wheel_drop_sensor>
 
   <xacro:wheel_drop_sensor 
     prefix="rear_left"
     parent_link="chassis_link">
-    <origin xyz="${-wheel_drop_sensor_x_offset} ${wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${PI/2}"/>
+    <origin xyz="${-wheel_drop_sensor_x_offset} ${wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="${PI/4} 0 0"/>
     <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
-    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+    <pose>0 0 0 0 ${PI/2} 0</pose>
   </xacro:wheel_drop_sensor>
 
   <xacro:wheel_drop_sensor 
     prefix="rear_right"
     parent_link="chassis_link">
-    <origin xyz="${-wheel_drop_sensor_x_offset} ${-wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="0 0 ${-PI/2}"/>
+    <origin xyz="${-wheel_drop_sensor_x_offset} ${-wheel_drop_sensor_y_offset} ${wheel_drop_sensor_z_offset}" rpy="${-PI/4} 0 0"/>
     <box size="${wheel_drop_sensor_length} ${wheel_drop_sensor_width} ${wheel_drop_sensor_height}"/>
-    <pose>0.01 0 0 0 ${PI/2} 0</pose>
+    <pose>0 0 0 0 ${PI/2} 0</pose>
   </xacro:wheel_drop_sensor>
 
   <xacro:wheel_drop_sensor 

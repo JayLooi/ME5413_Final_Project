@@ -31,7 +31,6 @@
 
     <gazebo reference="${prefix}_wheel_drop_sensor_link">
       <sensor type="ray" name="${prefix}_wheel_drop_sensor">
-        <!-- <pose>0 0 0 0 0 0</pose> -->
         <xacro:insert_block name="sensor_pose"/>
         <visualize>true</visualize>
         <update_rate>100</update_rate>
