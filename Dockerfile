@@ -42,11 +42,14 @@ RUN chmod 777 /home/$USERNAME/.rviz
 RUN rosdep install --from-paths /home/$USERNAME/ME5413_Final_Project/src --ignore-src -r -y
 RUN cd /home/$USERNAME/ME5413_Final_Project && /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && catkin_make"
 
-RUN mkdir -p /home/$USERNAME/ME5413_Final_Project/.gazebo/models
-RUN git clone https://github.com/osrf/gazebo_models.git /home/$USERNAME/ME5413_Final_Project/gazebo_models
+RUN mkdir -p /home/$USERNAME/.gazebo/models
+RUN chown -R ros:ros /home/$USERNAME/.gazebo
 
-RUN cp -r /home/$USERNAME/ME5413_Final_Project/gazebo_models/* /home/$USERNAME/ME5413_Final_Project/.gazebo/models
-COPY ./src/me5413_world/models/* /home/$USERNAME/ME5413_Final_Project/.gazebo/models/
+COPY ./src/me5413_world/models/ /home/$USERNAME/.gazebo/models
+
+RUN git clone https://github.com/osrf/gazebo_models.git /home/$USERNAME/gazebo_models
+
+RUN cp -r /home/$USERNAME/gazebo_models/* /home/$USERNAME/.gazebo/models
 
 RUN echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc
 RUN echo "if [ -f /home/$USERNAME/ME5413_Final_Project/devel/setup.bash ]; then source /home/$USERNAME/ME5413_Final_Project/devel/setup.bash; fi" >> /home/$USERNAME/.bashrc
