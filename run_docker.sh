@@ -4,6 +4,7 @@ DIR=$(pwd)
 echo $DIR
 docker run -it --rm \
     --name=me5413_final_project_ros_container \
+    --gpus all \
     --env="DISPLAY=$DISPLAY" \
     --env="QT_X11_NO_NITSHM=1" \
     --volume="/tmp/.X11-unix/:/tmp/.X11-unix:rw" \

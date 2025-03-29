@@ -1,4 +1,4 @@
-FROM osrf/ros:noetic-desktop-full
+FROM siddux/ros:noetic-cuda-gazebo-nvidia
 
 ARG ROS_DISTRO=noetic
 
@@ -9,11 +9,11 @@ ARG USER_GID=$USER_UID
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y sudo git \
-    && apt-get install -y ros-noetic-vision-msgs ros-noetic-cv-bridge ros-noetic-sensor-msgs ros-noetic-vision-msgs python3-pip python3-tk\
+    ros-noetic-vision-msgs ros-noetic-cv-bridge ros-noetic-sensor-msgs ros-noetic-vision-msgs python3-pip python3-tk\
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-RUN apt-get install -y  \
+RUN apt-get update && apt-get install -y  \
     ros-noetic-tf2-ros \
     ros-noetic-tf2-geometry-msgs \
     ros-noetic-jsk-rviz-plugins \
@@ -39,7 +39,7 @@ RUN chmod 777 /home/$USERNAME/.cache
 RUN mkdir -p /home/$USERNAME/.rviz
 RUN chmod 777 /home/$USERNAME/.rviz
 
-RUN rosdep install --from-paths /home/$USERNAME/ME5413_Final_Project/src --ignore-src -r -y
+RUN rosdep update && rosdep install --from-paths /home/$USERNAME/ME5413_Final_Project/src --ignore-src -r -y
 RUN cd /home/$USERNAME/ME5413_Final_Project && /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && catkin_make"
 
 RUN mkdir -p /home/$USERNAME/.gazebo/models
@@ -53,8 +53,6 @@ RUN cp -r /home/$USERNAME/gazebo_models/* /home/$USERNAME/.gazebo/models
 
 RUN echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc
 RUN echo "if [ -f /home/$USERNAME/ME5413_Final_Project/devel/setup.bash ]; then source /home/$USERNAME/ME5413_Final_Project/devel/setup.bash; fi" >> /home/$USERNAME/.bashrc
-
-RUN useradd -ms /bin/bash $USERNAME
 
 RUN chown -R ros:ros /home/$USERNAME/.ros
 RUN chown -R ros:ros /home/$USERNAME/.ignition
