@@ -1,0 +1,17 @@
+# map_type: costmap
+global_frame: map
+robot_base_frame: base_link
+footprint: [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
+
+obstacle_range: 2.5
+raytrace_range: 3.0
+
+inflation_layer:
+  inflation_radius: 0.5
+  cost_scaling_factor: 4.0
+
+track_unknown_space: true
+
+obstacles_layer:
+  observation_sources: scan
+  scan: {sensor_frame: tim551, data_type: LaserScan, topic: /front/scan, marking: true, clearing: true, obstacle_range: 2.5, raytrace_range: 3.0}

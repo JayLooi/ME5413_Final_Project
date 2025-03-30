@@ -1,0 +1,24 @@
+<launch>
+  <arg name="mapping_lauch_file" default="$(find jackal_mapping)/launch/include/gmapping.launch"/>
+
+  <include file="$(arg mapping_lauch_file)"/>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find jackal_mapping)/config/move_base.yaml" command="load"/>
+    <rosparam file="$(find jackal_mapping)/config/costmap_common.yaml" command="load" ns="global_costmap"/>
+    <rosparam file="$(find jackal_mapping)/config/costmap_common.yaml" command="load" ns="local_costmap"/>
+    <rosparam file="$(find jackal_mapping)/config/costmap_global.yaml" command="load"/>
+    <rosparam file="$(find jackal_mapping)/config/costmap_local.yaml" command="load"/>
+    <rosparam file="$(find jackal_mapping)/config/planner_global.yaml" command="load"/>
+    <rosparam file="$(find jackal_mapping)/config/planner_local.yaml" command="load"/>
+
+    <remap from="cmd_vel" to="cmd_vel_nav" />
+  </node>
+
+  <node pkg="explore_lite" type="explore" respawn="true" name="explore" output="screen">
+    <rosparam file="$(find jackal_mapping)/config/exploration.yaml" command="load"/>
+  </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find me5413_world)/rviz/gmapping.rviz"/>
+
+</launch>
