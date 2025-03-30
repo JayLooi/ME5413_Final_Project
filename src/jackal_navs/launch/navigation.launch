@@ -1,0 +1,30 @@
+<launch>
+  <!-- Run the map server -->
+  <arg name="map_file" default="$(find me5413_world)/maps/carto_map.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/>
+
+  <!-- Launch the AMCL Localizer -->
+  <include file="$(find jackal_navigation)/launch/include/amcl.launch"/>
+
+  <!-- Launch Move Base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find jackal_navs)/config/costmap_common.yaml" command="load" ns="global_costmap"/>
+    <rosparam file="$(find jackal_navs)/config/costmap_common.yaml" command="load" ns="local_costmap"/>
+
+    <rosparam file="$(find jackal_navigation)/params/map_nav_params/local_costmap_params.yaml" command="load"/>
+    <rosparam file="$(find jackal_navigation)/params/map_nav_params/global_costmap_params.yaml" command="load"/>
+
+    <rosparam file="$(find jackal_navigation)/params/base_local_planner_params.yaml" command="load"/>
+    <rosparam file="$(find jackal_navigation)/params/move_base_params.yaml" command="load"/>
+
+    <param name="base_global_planner" type="string" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
+
+    <remap from="odom" to="odometry/filtered" />
+  </node>
+
+  <!-- Launch Rviz with our settings -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find me5413_world)/rviz/navigation.rviz" output="log" respawn="true"/>
+
+  <node ns="me5413_world" pkg="me5413_world" type="goal_publisher_node" name="goal_publisher_node" output="screen"/>
+</launch>
