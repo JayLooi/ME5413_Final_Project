@@ -1,0 +1,4 @@
+<launch>
+  <!-- <rosparam file="$(find wheel_drop_sensing)/config/negative_obstacles_detection.yaml" command="load"/> -->
+  <node pkg="wheel_drop_sensing" type="wheel_drop_sensing_node" name="wheel_drop_sensing_node"/>
+</launch>
