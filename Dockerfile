@@ -16,6 +16,7 @@ RUN apt-get update \
 RUN apt-get update && apt-get install -y  \
     ros-noetic-tf2-ros \
     ros-noetic-tf2-geometry-msgs \
+    ros-noetic-tf2-sensor-msgs \
     ros-noetic-jsk-rviz-plugins \
     ros-noetic-jackal-gazebo \
     ros-noetic-jackal-navigation \
@@ -23,6 +24,8 @@ RUN apt-get update && apt-get install -y  \
     ros-noetic-teleop-twist-keyboard \
     ros-noetic-gazebo-ros-pkgs \
     ros-noetic-gazebo-ros-control
+
+RUN pip3 install numpy
 
 RUN mkdir -p /home/$USERNAME/ME5413_Final_Project
 RUN chmod 777 /home/$USERNAME/ME5413_Final_Project
@@ -39,9 +42,6 @@ RUN chmod 777 /home/$USERNAME/.cache
 RUN mkdir -p /home/$USERNAME/.rviz
 RUN chmod 777 /home/$USERNAME/.rviz
 
-RUN rosdep update && rosdep install --from-paths /home/$USERNAME/ME5413_Final_Project/src --ignore-src -r -y
-RUN cd /home/$USERNAME/ME5413_Final_Project && /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && catkin_make"
-
 RUN mkdir -p /home/$USERNAME/.gazebo/models
 RUN chown -R ros:ros /home/$USERNAME/.gazebo
 
@@ -51,14 +51,17 @@ RUN git clone https://github.com/osrf/gazebo_models.git /home/$USERNAME/gazebo_m
 
 RUN cp -r /home/$USERNAME/gazebo_models/* /home/$USERNAME/.gazebo/models
 
-RUN echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc
-RUN echo "if [ -f /home/$USERNAME/ME5413_Final_Project/devel/setup.bash ]; then source /home/$USERNAME/ME5413_Final_Project/devel/setup.bash; fi" >> /home/$USERNAME/.bashrc
-
 RUN chown -R ros:ros /home/$USERNAME/.ros
 RUN chown -R ros:ros /home/$USERNAME/.ignition
 RUN chown -R ros:ros /home/$USERNAME/.cache
 RUN chown -R ros:ros /home/$USERNAME/.rviz
 
 USER $USERNAME
+
+RUN rosdep update && rosdep install --from-paths /home/$USERNAME/ME5413_Final_Project/src --ignore-src -r -y
+RUN cd /home/$USERNAME/ME5413_Final_Project && /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && catkin_make"
+
+RUN echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc
+RUN echo "if [ -f /home/$USERNAME/ME5413_Final_Project/devel/setup.bash ]; then source /home/$USERNAME/ME5413_Final_Project/devel/setup.bash; fi" >> /home/$USERNAME/.bashrc
 
 WORKDIR /home/$USERNAME/ME5413_Final_Project

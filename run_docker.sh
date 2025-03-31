@@ -8,7 +8,7 @@ docker run -it --rm \
     --env="DISPLAY=$DISPLAY" \
     --env="QT_X11_NO_NITSHM=1" \
     --volume="/tmp/.X11-unix/:/tmp/.X11-unix:rw" \
-    --volume="$DIR:/home/ros/ME5413_Final_Project" \
+    --volume="$DIR/src:/home/ros/ME5413_Final_Project/src" \
     --env="XAUTHORITY=$XAUTH"\
     --volume="$XAUTH:$XAUTH" \
     --net=host \
