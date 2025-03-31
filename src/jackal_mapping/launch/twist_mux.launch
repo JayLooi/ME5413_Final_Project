@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="topic_tools" type="mux" name="cmd_vel_mux" args="cmd_vel cmd_vel_nav cmd_vel_keyboard mux:=cmd_vel_mux" output="screen"/>
+  <node pkg="topic_tools" type="mux_select" name="select_nav" args="cmd_vel_mux cmd_vel_nav" output="screen"/>
+</launch>

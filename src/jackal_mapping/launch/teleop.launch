@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="topic_tools" type="mux_select" name="select_teleop" args="cmd_vel_mux cmd_vel_keyboard"/>
+  <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" respawn="true">
+    <remap from="cmd_vel" to="cmd_vel_keyboard"/>
+  </node>
+</launch>
