@@ -388,7 +388,7 @@ class SimpleCoveragePlanner:
                             boxes_grid_map[row_min:row_max+1, col_min:col_max+1] = 1
 
                         offset = BOX_SIZE / 2 + IMG_CAPTURE_DIST
-                        offset_robot = np.linalg.norm([ROBOT_LENGTH, ROBOT_WIDTH]) / 2 + 0.05
+                        offset_robot = np.linalg.norm([ROBOT_LENGTH, ROBOT_WIDTH]) / 2 + 0.02
                         for box in self._box_locations:
                             box_left = [box[0] - offset, box[1], 0.0]
                             box_right = [box[0] + offset, box[1], np.pi]
