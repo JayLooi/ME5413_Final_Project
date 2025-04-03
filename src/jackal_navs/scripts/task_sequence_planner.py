@@ -4,7 +4,8 @@ import rospy
 import time
 import cv2
 import numpy as np
-import tf2_ros 
+import tf2_ros
+from threading import Lock
 from tf2_geometry_msgs import do_transform_pose
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import LaserScan, Image
@@ -13,6 +14,7 @@ from nav_msgs.msg import Odometry
 from actionlib_msgs.msg import GoalID, GoalStatusArray
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from cv_bridge import CvBridge
+from visualization_msgs.msg import Marker
 
 
 BOX_SIZE = 0.8
@@ -29,11 +31,11 @@ class SimpleCoveragePlanner:
     NAV_STATE_IDLE = 0
     NAV_STATE_GOAL_SENT = 1
     NAV_STATE_NAVIGATING = 2
-    CAPTURE_STATE_IDLE = 0
-    CAPTURE_STATE_NAV = 1
-    CAPTURE_STATE_CAP = 2
+    NAV_STATE_CAPTURING = 3
+    GOAL_TYPE_EXPLORE = 0
+    GOAL_TYPE_CAPTURE = 1
 
-    def __init__(self, area_bound, resolution=0.02, scan_proximity=2.0):
+    def __init__(self, area_bound, resolution=0.02, scan_proximity=5.0):
         rospy.init_node('simple_coverage_planner', anonymous=True)
         self._coverage_map_origin = np.array(area_bound[0])
         self._coverage_map_limit = np.array(area_bound[1])
@@ -42,18 +44,20 @@ class SimpleCoveragePlanner:
         col_size = int((max_x - min_x) / resolution)
         row_size = int((max_y - min_y) / resolution)
         self._coverage_map = np.zeros((row_size, col_size))
+        self._coverage_rate = 0.0
         self._box_locations = []
         self._goal_poses = [
             (BOXES_AREA_MAX_X_COORD + 3, 0, -np.pi / 2), 
             (BOXES_AREA_MAX_X_COORD, BOXES_AREA_MIN_Y_COORD, np.pi / 2)
         ]
         self._goal_xy_tol = 0.45
-        self._goal_yaw_tol = 0.35
+        self._goal_yaw_tol = 0.3
         self._proximity = scan_proximity
         self._navigate_state = self.NAV_STATE_IDLE
+        self._curr_goal_type = self.GOAL_TYPE_EXPLORE
         self._goal_status = -1
-        self._capture_state = self.CAPTURE_STATE_IDLE
         self._img_num = 0
+        self._cov_map_mutex = Lock()
         self._bridge = CvBridge()
         self._tf_buffer = tf2_ros.Buffer()
         self._tf_listener = tf2_ros.TransformListener(self._tf_buffer)
@@ -63,6 +67,7 @@ class SimpleCoveragePlanner:
         self._init_pose = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=10)
         self._nav_point_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
         self._nav_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
+        self._viz_pub = rospy.Publisher('/viz/box_line', Marker, queue_size=20)
 
     def _goal_status_cb(self, msg):
         if msg.status_list:
@@ -144,15 +149,12 @@ class SimpleCoveragePlanner:
 
             vec = p2 - p1
             length = np.linalg.norm(vec)
-            # rospy.loginfo(f'length = {length}')
             if length < 0.75 * BOX_SIZE or length > 1.1 * BOX_SIZE:
                 continue
 
             # Check if the line is parallel to x or y axis
             vec_x_abs = abs(vec[0])
             vec_y_abs = abs(vec[1])
-            # rospy.loginfo(f'x component = {vec_x_abs}')
-            # rospy.loginfo(f'y component = {vec_y_abs}')
             if vec_y_abs < 0.035:
                 box_x = (p1[0] + p2[0]) / 2
                 avg_y = (p1[1] + p2[1]) / 2
@@ -189,6 +191,26 @@ class SimpleCoveragePlanner:
                 self._box_locations.append(box_centre)
                 self._goal_poses.append(potential_goal)
                 rospy.loginfo(f'box={box_centre}, potential_goal={potential_goal}, detected_line length={length}')
+                box_bottomleft = np.array(box_centre) - BOX_SIZE / 2 - 0.05
+                box_topright = np.array(box_centre) + BOX_SIZE / 2 + 0.05
+                viz = Marker()
+                viz.ns = str(len(self._box_locations))
+                viz.type = Marker.CUBE
+                viz.action = Marker.ADD
+                viz.header.frame_id = 'map'
+                viz.pose.position.x = box_centre[0]
+                viz.pose.position.y = box_centre[1]
+                viz.pose.position.z = 0.0
+                viz.pose.orientation.x = 0.0
+                viz.pose.orientation.y = 0.0
+                viz.pose.orientation.z = 0.0
+                viz.pose.orientation.w = 1.0
+                viz.scale.x = BOX_SIZE + 0.1
+                viz.scale.y = BOX_SIZE + 0.1
+                viz.scale.z = 0.01
+                viz.color.a = 1.0
+                self._viz_pub.publish(viz)
+                self._update_coverage_map(box_bottomleft, box_topright, -1.0, blocking=True)
 
     def _transform_point_to_coverage_map(self, point):
         transformed = (np.array(point) - self._coverage_map_origin) / self.resolution
@@ -265,27 +287,34 @@ class SimpleCoveragePlanner:
             return [(p1, p2)]
 
     def _image_cb(self, msg):
-        if self._navigate_state == self.NAV_STATE_IDLE and self._capture_state == self.CAPTURE_STATE_CAP:
+        if self._navigate_state == self.NAV_STATE_CAPTURING:
             rospy.loginfo(f'Capturing {self._img_num}')
             cv_image = self._bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             cv2.imwrite(f'./src/jackal_navs/temp/{self._img_num}.png', cv_image)
             self._img_num += 1
-            self._capture_state = self.CAPTURE_STATE_IDLE
+            self._navigate_state = self.NAV_STATE_IDLE
 
-    def _update_coverage_map(self):
+    def _update_coverage_map(self, bottomleft, topright, value, blocking):
+        if self._cov_map_mutex.acquire(blocking=blocking):
+            row_min, col_min = self._transform_point_to_coverage_map(bottomleft)
+            row_max, col_max = self._transform_point_to_coverage_map(topright)
+            self._coverage_map[row_min:row_max+1, col_min:col_max+1] = value
+            self._coverage_rate = np.sum(self._coverage_map != 0) / np.multiply(*self._coverage_map.shape)
+            self._cov_map_mutex.release()
+
+    def _update_visited_area(self):
         current_pose = self.get_current_pose()
         if current_pose is not None and self._check_bound(current_pose):
             min_coord = [current_pose[0] - self._proximity, current_pose[1] - self._proximity]
             max_coord = [current_pose[0] + self._proximity, current_pose[1] + self._proximity]
-            row_min, col_min = self._transform_point_to_coverage_map(min_coord)
-            row_max, col_max = self._transform_point_to_coverage_map(max_coord)
-            self._coverage_map[row_min:row_max+1, col_min:col_max+1] = 1.0
+            self._update_coverage_map(min_coord, max_coord, 1.0, blocking=False)
 
     def _check_goal_reached(self, goal_x, goal_y, goal_yaw):
         pose = self.get_current_pose()
         if pose:
             dist_to_goal = np.linalg.norm(np.array(pose[0:2]) - np.array([goal_x, goal_y]))
             if dist_to_goal < self._goal_xy_tol and abs(pose[2] - goal_yaw) < self._goal_yaw_tol:
+                self._nav_cancel.publish(GoalID())
                 return True
 
         return False
@@ -294,15 +323,20 @@ class SimpleCoveragePlanner:
         current_pose = self.get_current_pose()
         if current_pose is not None:
             min_distance = np.Inf
+            t = time.time()
             for i in range(self._coverage_map.shape[0]):
                 for j in range(self._coverage_map.shape[1]):
                     if self._coverage_map[i, j] == 0:  # Not covered yet
                         position = self._transform_point_from_coverage_map(i, j)
                         distance = np.linalg.norm(position - np.array(current_pose[0:2]))
                         if distance > self._proximity and distance < min_distance:
-                            min_distance = distance
-                            nearest = position
-
+                            row_min, col_min = self._transform_point_to_coverage_map(position - ROBOT_LENGTH / 2 - 0.05)
+                            row_max, col_max = self._transform_point_to_coverage_map(position + ROBOT_LENGTH / 2 + 0.05)
+                            if np.all(self._coverage_map[row_min:row_max+1, col_min:col_max+1] != -1.0):
+                                min_distance = distance
+                                nearest = position
+            t = time.time() - t
+            rospy.loginfo(f'Explore loop time={t}')
             if min_distance < np.Inf:
                 return [nearest[0], nearest[1], np.pi / 2]
 
@@ -322,32 +356,27 @@ class SimpleCoveragePlanner:
         while not rospy.is_shutdown():
             if self._navigate_state == self.NAV_STATE_IDLE:
                 if curr_goal_idx < len(self._goal_poses):
+                    self.send_goal(*self._goal_poses[curr_goal_idx])
                     if curr_goal_idx < 2:
-                        self.send_goal(*self._goal_poses[curr_goal_idx])
-                        curr_goal_idx += 1
-
+                        self._curr_goal_type = self.GOAL_TYPE_EXPLORE
                     else:
-                        if self._capture_state == self.CAPTURE_STATE_NAV:
-                            self._capture_state = self.CAPTURE_STATE_CAP
-
-                        elif self._capture_state == self.CAPTURE_STATE_IDLE:
-                            self.send_goal(*self._goal_poses[curr_goal_idx])
-                            curr_goal_idx += 1
-                            self._capture_state = self.CAPTURE_STATE_NAV
+                        self._curr_goal_type = self.GOAL_TYPE_CAPTURE
+                    curr_goal_idx += 1
 
                 else:
-                    if np.sum(self._coverage_map) / np.multiply(*self._coverage_map.shape) < 0.99:
+                    if self._coverage_rate < 0.99:
                         next_goal = self._explore()
                         if next_goal is not None:
                             self.send_goal(*next_goal)
+                            self._curr_goal_type = self.GOAL_TYPE_EXPLORE
 
             elif self._navigate_state == self.NAV_STATE_NAVIGATING:
-                if self._goal_status in (2, 3, 4, 5, 8, 9):
-                    self._navigate_state = self.NAV_STATE_IDLE
-
-                elif self._check_goal_reached(*self._current_goal):
-                    self._nav_cancel.publish(GoalID())
-                    self._navigate_state = self.NAV_STATE_IDLE
+                if (self._goal_status in (2, 3, 4, 5, 8, 9) or
+                    self._check_goal_reached(*self._current_goal)):
+                    if self._curr_goal_type == self.GOAL_TYPE_EXPLORE:
+                        self._navigate_state = self.NAV_STATE_IDLE
+                    elif self._curr_goal_type == self.GOAL_TYPE_CAPTURE:
+                        self._navigate_state = self.NAV_STATE_CAPTURING
 
             elif self._navigate_state == self.NAV_STATE_GOAL_SENT:
                 if self._goal_status == 1:
@@ -358,12 +387,12 @@ class SimpleCoveragePlanner:
                 current_pose = self.get_current_pose()
                 if current_pose is not None:
                     rospy.loginfo(f'Current Pose (tf2): x={current_pose[0]}, y={current_pose[1]}, yaw={current_pose[2]}')
-                    rospy.loginfo(f'Coverage rate: {np.sum(self._coverage_map) / np.multiply(*self._coverage_map.shape)} nav_state={self._navigate_state} cap_state={self._capture_state} curr_goal_idx={curr_goal_idx}, {self._goal_poses}')
+                    rospy.loginfo(f'Coverage rate: {self._coverage_rate} nav_state={self._navigate_state} curr_goal_idx={curr_goal_idx}, {self._goal_poses}')
                 pose_print_timer = 0
 
             cov_map_update_timer += 1
             if cov_map_update_rate >= (rate / cov_map_update_rate):
-                self._update_coverage_map()
+                self._update_visited_area()
                 cov_map_update_timer = 0
 
             loop_rate.sleep()
