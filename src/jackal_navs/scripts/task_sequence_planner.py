@@ -55,6 +55,7 @@ class SimpleCoveragePlanner:
         self._proximity = scan_proximity
         self._navigate_state = self.NAV_STATE_IDLE
         self._curr_goal_type = self.GOAL_TYPE_EXPLORE
+        self._are_boxes_localised = False
         self._goal_status = -1
         self._img_num = 0
         self._cov_map_mutex = Lock()
@@ -149,7 +150,7 @@ class SimpleCoveragePlanner:
 
             vec = p2 - p1
             length = np.linalg.norm(vec)
-            if length < 0.75 * BOX_SIZE or length > 1.1 * BOX_SIZE:
+            if length < 0.8 * BOX_SIZE or length > 1.1 * BOX_SIZE:
                 continue
 
             # Check if the line is parallel to x or y axis
@@ -189,7 +190,7 @@ class SimpleCoveragePlanner:
 
             else:
                 self._box_locations.append(box_centre)
-                self._goal_poses.append(potential_goal)
+                # self._goal_poses.append(potential_goal)
                 rospy.loginfo(f'box={box_centre}, potential_goal={potential_goal}, detected_line length={length}')
                 box_bottomleft = np.array(box_centre) - BOX_SIZE / 2 - 0.05
                 box_topright = np.array(box_centre) + BOX_SIZE / 2 + 0.05
@@ -369,6 +370,40 @@ class SimpleCoveragePlanner:
                         if next_goal is not None:
                             self.send_goal(*next_goal)
                             self._curr_goal_type = self.GOAL_TYPE_EXPLORE
+
+                    elif not self._are_boxes_localised:
+                        self._are_boxes_localised = True
+                        boxes_grid_map = np.zeros_like(self._coverage_map)
+                        boxes_grid_map[0, :] = 1
+                        boxes_grid_map[-1, :] = 1
+                        boxes_grid_map[:, 0] = 1
+                        boxes_grid_map[:, -1] = 1
+                        offset = BOX_SIZE / 2
+                        for box in self._box_locations:
+                            box = np.array(box)
+                            box_bottomleft = box - offset
+                            box_topright = box + offset
+                            row_min, col_min = self._transform_point_to_coverage_map(box_bottomleft)
+                            row_max, col_max = self._transform_point_to_coverage_map(box_topright)
+                            boxes_grid_map[row_min:row_max+1, col_min:col_max+1] = 1
+
+                        offset = BOX_SIZE / 2 + IMG_CAPTURE_DIST
+                        offset_robot = np.linalg.norm([ROBOT_LENGTH, ROBOT_WIDTH]) / 2 + 0.05
+                        for box in self._box_locations:
+                            box_left = [box[0] - offset, box[1], 0.0]
+                            box_right = [box[0] + offset, box[1], np.pi]
+                            box_bottom = [box[0], box[1] - offset, np.pi / 2]
+                            box_top = [box[0], box[1] + offset, -np.pi / 2]
+                            for possible_pose in (box_left, box_right, box_bottom, box_top):
+                                position = np.array(possible_pose[0:2])
+                                area_to_navigate = [position - offset_robot, position + offset_robot]
+                                row_min, col_min = self._transform_point_to_coverage_map(area_to_navigate[0])
+                                row_max, col_max = self._transform_point_to_coverage_map(area_to_navigate[1])
+                                if np.all(boxes_grid_map[row_min:row_max+1, col_min:col_max+1] == 0):
+                                    self._goal_poses.append(possible_pose)
+                                    break
+                            else:
+                                rospy.logwarn(f'Could not find feasible pose for capturing box at {box}')
 
             elif self._navigate_state == self.NAV_STATE_NAVIGATING:
                 if (self._goal_status in (2, 3, 4, 5, 8, 9) or
