@@ -1,0 +1,13 @@
+negative_obs_mark_threshold: 1.80
+
+sensor_topics: [
+  "/wheel_drop_sensor/front_centre", "/wheel_drop_sensor/rear_centre",
+  "/wheel_drop_sensor/front_left", "/wheel_drop_sensor/rear_left",
+  "/wheel_drop_sensor/front_right", "/wheel_drop_sensor/rear_right"
+]
+
+output_topics: [
+  "/wheel_drop_sensor/proccessed/front_centre", "/wheel_drop_sensor/proccessed/rear_centre",
+  "/wheel_drop_sensor/proccessed/front_left", "/wheel_drop_sensor/proccessed/rear_left",
+  "/wheel_drop_sensor/proccessed/front_right", "/wheel_drop_sensor/proccessed/rear_right"
+]
