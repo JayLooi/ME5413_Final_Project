@@ -67,6 +67,8 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>global_planner</exec_depend>
+  <exec_depend>dwa_local_planner</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
