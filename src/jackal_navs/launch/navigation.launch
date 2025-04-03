@@ -1,6 +1,6 @@
 <launch>
   <!-- Run the map server -->
-  <arg name="map_file" default="$(find me5413_world)/maps/carto_map.yaml"/>
+  <arg name="map_file" default="$(find me5413_world)/maps/lio_sam_map.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/>
 
   <!-- Launch the AMCL Localizer -->
