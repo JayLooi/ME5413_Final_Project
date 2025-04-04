@@ -7,7 +7,7 @@ import os
 import numpy as np
 import tf2_ros
 from threading import Lock
-from tf2_geometry_msgs import do_transform_pose
+from tf2_geometry_msgs import do_transform_pose, do_transform_point
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import LaserScan, Image
 from geometry_msgs.msg import PoseWithCovarianceStamped, PointStamped
@@ -345,10 +345,23 @@ class SimpleCoveragePlanner:
 
     def _bridge_detect_cb(self, msg):
         if self._cross_bridge_goal_pose is None:
-            self._cross_bridge_goal_pose = [
-                (msg.point.x, msg.point.y, np.pi),
-                (2.0, msg.point.y, np.pi)
-            ]
+            try:
+                # Get transformation from laser frame to map
+                transform = self._tf_buffer.lookup_transform(
+                    'map',
+                    msg.header.frame_id,
+                    rospy.Time(0),
+                    rospy.Duration(1.0)
+                )
+
+                transformed = do_transform_point(msg, transform)
+                self._cross_bridge_goal_pose = [
+                    (transformed.point.x, transformed.point.y, np.pi),
+                    (2.0, transformed.point.y, np.pi)
+                ]
+
+            except Exception as e:
+                rospy.logerr(f'Bridge position transformation error: {e}')
 
     def _blockade_cone_detect_cb(self, msg):
         if self._blockade_goal_pose is None:
@@ -434,10 +447,7 @@ class SimpleCoveragePlanner:
         self._target_box_poses = [
             {'pose': (1.0, pose[1], pose[2]), 'digit': None} for pose in target_box_detect_poses
         ]
-        detect_bridge_poses = [
-            (BRIDGE_DETECT_AREA_MIN_X, BRIDGE_DETECT_AREA_MIN_Y, np.pi / 2),
-            (BRIDGE_DETECT_AREA_MAX_X, BRIDGE_DETECT_AREA_MAX_Y, np.pi / 2)
-        ]
+        detect_bridge_poses = [BRIDGE_DETECT_AREA_MIN_X, (BRIDGE_DETECT_AREA_MIN_Y + BRIDGE_DETECT_AREA_MAX_Y) / 2, np.pi]
 
         while not rospy.is_shutdown():
             if self._navigate_state == self.NAV_STATE_DONE:
@@ -524,18 +534,22 @@ class SimpleCoveragePlanner:
                                 rospy.logwarn(f'Could not find feasible pose for capturing box at {box}')
 
                     elif detect_bridge_poses:
-                        self.send_goal(*detect_bridge_poses.pop(0))
+                        self.send_goal(*detect_bridge_poses)
+                        detect_bridge_poses.clear()
                         self._curr_goal_type = self.GOAL_TYPE_DETECT_BRIDGE
 
-                    elif self._bridge_detect_start:
-                        trigger = Bool()
-                        trigger.data = False
-                        self._start_bridge_detect_pub.publish(trigger)
-                        self._bridge_detect_start = False
-                        self._curr_goal_type = self.GOAL_TYPE_EXPLORE
+                    elif self._curr_goal_type == self.GOAL_TYPE_DETECT_BRIDGE:
+                        rospy.loginfo('Detecting bridge...')
+                        if self._cross_bridge_goal_pose is not None and self._bridge_detect_start:
+                            rospy.loginfo('Start bridge detection...')
+                            trigger = Bool()
+                            trigger.data = False
+                            self._start_bridge_detect_pub.publish(trigger)
+                            self._bridge_detect_start = False
+                            self._curr_goal_type = self.GOAL_TYPE_EXPLORE
 
                     elif (self._cross_bridge_goal_pose is not None and
-                          self._cross_bridge_pose_idx < len(self._cross_bridge_goal_pose)):
+                        self._cross_bridge_pose_idx < len(self._cross_bridge_goal_pose)):
                         if self._cross_bridge_pose_idx == 1:
                             cmd = Bool()
                             cmd.data = True
@@ -562,27 +576,27 @@ class SimpleCoveragePlanner:
                 if (self._goal_status in (2, 3, 4, 5, 8, 9) or
                     self._check_goal_reached(*self._current_goal)):
                     if self._curr_goal_type in (self.GOAL_TYPE_EXPLORE, self.GOAL_TYPE_DETECT_BRIDGE, self.GOAL_TYPE_CROSS_BRIDGE):
+                        if (self._curr_goal_type == self.GOAL_TYPE_DETECT_BRIDGE and
+                            not self._bridge_detect_start):
+                            rospy.loginfo('starting bridge detection...')
+                            current_pose = self.get_current_pose()
+                            if current_pose is not None:
+                                if (current_pose[0] > BRIDGE_DETECT_AREA_MIN_X and
+                                    current_pose[1] > BRIDGE_DETECT_AREA_MIN_Y and
+                                    current_pose[0] < BRIDGE_DETECT_AREA_MAX_X and
+                                    current_pose[1] < BRIDGE_DETECT_AREA_MAX_Y):
+                                    trigger = Bool()
+                                    trigger.data = True
+                                    self._start_bridge_detect_pub.publish(trigger)
+                                    self._bridge_detect_start = True
                         self._navigate_state = self.NAV_STATE_IDLE
+
                     elif self._curr_goal_type in (self.GOAL_TYPE_CAPTURE, self.GOAL_TYPE_CAPTURE_TARGET):
                         self._navigate_state = self.NAV_STATE_CAPTURING
 
             elif self._navigate_state == self.NAV_STATE_GOAL_SENT:
                 if self._goal_status == 1:
                     self._navigate_state = self.NAV_STATE_NAVIGATING
-
-            if (self._curr_goal_type == self.GOAL_TYPE_DETECT_BRIDGE and
-                not self._bridge_detect_start and
-                detect_bridge_poses):
-                current_pose = self.get_current_pose()
-                if current_pose is not None:
-                    if (current_pose[0] > BRIDGE_DETECT_AREA_MIN_X and
-                        current_pose[1] > BRIDGE_DETECT_AREA_MIN_Y and
-                        current_pose[0] < BRIDGE_DETECT_AREA_MAX_X and
-                        current_pose[1] < BRIDGE_DETECT_AREA_MAX_Y):
-                        trigger = Bool()
-                        trigger.data = True
-                        self._start_bridge_detect_pub.publish(trigger)
-                        self._bridge_detect_start = True
 
             pose_print_timer += 1
             if pose_print_timer >= (rate / pose_print_rate):
