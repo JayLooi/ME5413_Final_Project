@@ -3,6 +3,7 @@
 import rospy
 import time
 import cv2
+import os
 import numpy as np
 import tf2_ros
 from threading import Lock
@@ -67,6 +68,10 @@ class SimpleCoveragePlanner:
         self._nav_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
         self._viz_pub = rospy.Publisher('/viz/box_line', Marker, queue_size=20)
         self._image_pub = rospy.Publisher('/box_image', Image, queue_size=20)
+        directory = os.path.dirname(os.path.realpath(__file__))
+        self._temp_directory = os.path.abspath(directory + '/../temp')
+        if not os.path.isdir(self._temp_directory):
+            os.mkdir(self._temp_directory)
 
     def _goal_status_cb(self, msg):
         if msg.status_list:
@@ -289,7 +294,7 @@ class SimpleCoveragePlanner:
         if self._navigate_state == self.NAV_STATE_CAPTURING:
             rospy.loginfo(f'Capturing {self._img_num}')
             cv_image = self._bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            cv2.imwrite(f'~/Msc_Robotics/Semester-4/ME5413/Final_Project/ME5413_Final_Project/src/jackal_navs/temp/{self._img_num}.png', cv_image)
+            cv2.imwrite(f'{self._temp_directory}/{self._img_num}.png', cv_image)
             self._image_pub.publish(msg)
             self._img_num += 1
             self._navigate_state = self.NAV_STATE_IDLE

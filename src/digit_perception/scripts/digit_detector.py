@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import rospy
 import cv2
+import os
 import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
@@ -16,6 +17,10 @@ class DigitRecognizer:
         self.detected_numbers = {digit: 0 for digit in range(10)}
         self.image_sub = rospy.Subscriber('/box_image', Image, self.image_callback)
         self.result_pub = rospy.Publisher("/least_occurrence", Int32, queue_size=1)
+        directory = os.path.dirname(os.path.realpath(__file__))
+        self._temp_directory = os.path.abspath(directory + '/../temp')
+        if not os.path.isdir(self._temp_directory):
+            os.mkdir(self._temp_directory)
         rospy.loginfo("Digit recognizer node started.")
 
     def image_callback(self, msg):
@@ -46,7 +51,7 @@ class DigitRecognizer:
             cv2.rectangle(display_img, tuple(map(int, max_bbox[0])), tuple(map(int, max_bbox[2])), (0, 255, 0), 2)
             cv2.putText(display_img, f"{digit})", (int(max_bbox[0][0]), int(max_bbox[0][1]) - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.imwrite(f'~/Msc_Robotics/Semester-4/ME5413/Final_Project/ME5413_Final_Project/src/digit_perception/temp/{digit}_{self.detected_numbers[digit]}.png', display_img)
+            cv2.imwrite(f'{self._temp_directory}/{digit}_{self.detected_numbers[digit]}.png', display_img)
 
 if __name__ == "__main__":
     try:
