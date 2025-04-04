@@ -9,6 +9,7 @@ from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from sensor_msgs.msg import PointCloud2 as PC2
 import tf2_ros
 from std_srvs.srv import SetBool, SetBoolResponse
+from std_msgs.msg import Bool
 
 class BridgeDetector:
     def __init__(self):
@@ -22,7 +23,9 @@ class BridgeDetector:
         self.start_detection = False  # Default to False
 
         # ROS setup
-        self.cloud_sub = rospy.Subscriber('/mid/points', PointCloud2, self.cloud_callback)
+        # self.cloud_sub = rospy.Subscriber('/mid/points', PointCloud2, self.cloud_callback)
+        self.cloud_sub = None
+        self._bridge_detect_trigger_sub = rospy.Subscriber('/start_bridge_detect', Bool, self._bridge_detect_trigger_cb)
         self.detected_cone_pub = rospy.Publisher('/detected_cone', PointStamped, queue_size=10)
         self.detected_bridge_pub = rospy.Publisher('/detected_bridge', PointStamped, queue_size=10)
         self.tf_buffer = tf2_ros.Buffer()
@@ -39,6 +42,9 @@ class BridgeDetector:
         message = "ENABLED" if self.start_detection else "DISABLED"
         rospy.loginfo(f"Detection {message}")
         return SetBoolResponse(success=True, message=f"Detection {message}")
+
+    def _bridge_detect_trigger_cb(self, msg):
+        self.start_detection = msg.data
 
     def cloud_callback(self, cloud_msg):
         if not self.start_detection:
@@ -128,9 +134,23 @@ class BridgeDetector:
             rospy.logwarn(f"TF transform failed: {str(e)}")
             return None
 
+    def mainloop(self):
+        loop_rate = rospy.Rate(30)
+        while not rospy.is_shutdown():
+            if self.start_detection:
+                if self.cloud_sub is None:
+                    self.cloud_sub = rospy.Subscriber('/mid/points', PointCloud2, self.cloud_callback)
+            else:
+                if self.cloud_sub is not None:
+                    self.cloud_sub.unregister()
+                    self.cloud_sub = None
+
+            loop_rate.sleep()
+
 if __name__ == '__main__':
     try:
         detector = BridgeDetector()
-        rospy.spin()
+        detector.mainloop()
+        # rospy.spin()
     except rospy.ROSInterruptException:
         pass

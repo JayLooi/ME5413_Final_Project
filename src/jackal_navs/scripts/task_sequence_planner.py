@@ -10,8 +10,8 @@ from threading import Lock
 from tf2_geometry_msgs import do_transform_pose
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import LaserScan, Image
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseWithCovarianceStamped, PointStamped
+from std_msgs.msg import Int32, Bool
 from actionlib_msgs.msg import GoalID, GoalStatusArray
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from cv_bridge import CvBridge
@@ -26,6 +26,10 @@ BOXES_AREA_MAX_Y_COORD = -2.0
 ROBOT_WIDTH = 0.34
 ROBOT_LENGTH = 0.42
 IMG_CAPTURE_DIST = 0.8
+BRIDGE_DETECT_AREA_MIN_X = BOXES_AREA_MIN_X_COORD - 1.0
+BRIDGE_DETECT_AREA_MIN_Y = BOXES_AREA_MIN_Y_COORD
+BRIDGE_DETECT_AREA_MAX_X = BOXES_AREA_MIN_X_COORD
+BRIDGE_DETECT_AREA_MAX_Y = BOXES_AREA_MAX_Y_COORD
 
 
 class SimpleCoveragePlanner:
@@ -33,8 +37,14 @@ class SimpleCoveragePlanner:
     NAV_STATE_GOAL_SENT = 1
     NAV_STATE_NAVIGATING = 2
     NAV_STATE_CAPTURING = 3
+    NAV_STATE_WAITING_RESULT = 4
+    NAV_STATE_DONE = 0xFF
     GOAL_TYPE_EXPLORE = 0
     GOAL_TYPE_CAPTURE = 1
+    GOAL_TYPE_CAPTURE_TARGET = 2
+    GOAL_TYPE_DETECT_BRIDGE = 3
+    GOAL_TYPE_CROSS_BRIDGE = 4
+    GOAL_TYPE_RESULT = 5
 
     def __init__(self, area_bound, resolution=0.02, scan_proximity=5.0):
         rospy.init_node('simple_coverage_planner', anonymous=True)
@@ -54,6 +64,13 @@ class SimpleCoveragePlanner:
         self._navigate_state = self.NAV_STATE_IDLE
         self._curr_goal_type = self.GOAL_TYPE_EXPLORE
         self._are_boxes_localised = False
+        self._target_box_poses = []
+        self._num_target_box_detected = 0
+        self._bridge_detect_start = False
+        self._cross_bridge_goal_pose = None
+        self._cross_bridge_pose_idx = 0
+        self._blockade_goal_pose = None
+        self._least_occ = None
         self._goal_status = -1
         self._img_num = 0
         self._cov_map_mutex = Lock()
@@ -63,11 +80,18 @@ class SimpleCoveragePlanner:
         self._laserscan_sub = rospy.Subscriber('/front/scan', LaserScan, self._laserscan_cb)
         self._camera_sub = rospy.Subscriber('/front/image_raw', Image, self._image_cb)
         self._mvoe_base_status_sub = rospy.Subscriber('/move_base/status', GoalStatusArray, self._goal_status_cb)
+        self._least_occ_box_sub = rospy.Subscriber('/least_occurrence', Int32, self._least_occ_result_cb)
+        self._target_box_digit_sub = rospy.Subscriber('/target_box_digit', Int32, self._target_box_digit_cb)
+        self._bridge_sub = rospy.Subscriber('/detected_bridge', PointStamped, self._bridge_detect_cb)
+        self._blockade_cone_sub = rospy.Subscriber('/detected_cone', PointStamped, self._blockade_cone_detect_cb)
         self._init_pose = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=10)
         self._nav_point_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
         self._nav_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
         self._viz_pub = rospy.Publisher('/viz/box_line', Marker, queue_size=20)
         self._image_pub = rospy.Publisher('/box_image', Image, queue_size=20)
+        self._start_bridge_detect_pub = rospy.Publisher('/start_bridge_detect', Bool, queue_size=1)
+        self._target_box_pub = rospy.Publisher('/target_box', Image, queue_size=1)
+        self._bridge_open_pub = rospy.Publisher('/cmd_open_bridge', Bool, queue_size=1)
         directory = os.path.dirname(os.path.realpath(__file__))
         self._temp_directory = os.path.abspath(directory + '/../temp')
         if not os.path.isdir(self._temp_directory):
@@ -292,12 +316,43 @@ class SimpleCoveragePlanner:
 
     def _image_cb(self, msg):
         if self._navigate_state == self.NAV_STATE_CAPTURING:
-            rospy.loginfo(f'Capturing {self._img_num}')
-            cv_image = self._bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            cv2.imwrite(f'{self._temp_directory}/{self._img_num}.png', cv_image)
-            self._image_pub.publish(msg)
-            self._img_num += 1
-            self._navigate_state = self.NAV_STATE_IDLE
+            if self._curr_goal_type == self.GOAL_TYPE_CAPTURE:
+                rospy.loginfo(f'Capturing {self._img_num}')
+                cv_image = self._bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+                cv2.imwrite(f'{self._temp_directory}/{self._img_num}.png', cv_image)
+                self._image_pub.publish(msg)
+                self._img_num += 1
+                self._navigate_state = self.NAV_STATE_IDLE
+
+            elif self._curr_goal_type == self.GOAL_TYPE_CAPTURE_TARGET:
+                rospy.loginfo(f'Capturing target...')
+                self._target_box_pub.publish(msg)
+                self._navigate_state = self.NAV_STATE_WAITING_RESULT
+
+    def _target_box_digit_cb(self, msg):
+        if self._navigate_state == self.NAV_STATE_WAITING_RESULT:
+            self._target_box_poses[self._num_target_box_detected]['digit'] = msg.data
+            self._num_target_box_detected += 1
+            if self._least_occ is not None and self._least_occ == msg.data:
+                rospy.loginfo(f'Found least occurrence digit target box ({msg.data})')
+                self._navigate_state = self.NAV_STATE_DONE
+            else:
+                self._navigate_state = self.NAV_STATE_IDLE
+
+    def _least_occ_result_cb(self, msg):
+        # if self._curr_goal_type == self.GOAL_TYPE_RESULT:
+        self._least_occ = msg.data
+
+    def _bridge_detect_cb(self, msg):
+        if self._cross_bridge_goal_pose is None:
+            self._cross_bridge_goal_pose = [
+                (msg.point.x, msg.point.y, np.pi),
+                (2.0, msg.point.y, np.pi)
+            ]
+
+    def _blockade_cone_detect_cb(self, msg):
+        if self._blockade_goal_pose is None:
+            self._blockade_goal_pose = [msg.point.x, msg.point.y, np.pi]
 
     def _update_coverage_map(self, bottomleft, topright, value, blocking):
         if self._cov_map_mutex.acquire(blocking=blocking):
@@ -371,7 +426,23 @@ class SimpleCoveragePlanner:
             (BOXES_AREA_MAX_X_COORD, BOXES_AREA_MIN_Y_COORD, np.pi)
         ]
 
+        # target_box_detect_goal_idx = 0
+        y_step_size = (BRIDGE_DETECT_AREA_MAX_Y - BRIDGE_DETECT_AREA_MIN_Y) / 5
+        target_box_detect_poses = [
+            (2.2, BRIDGE_DETECT_AREA_MIN_Y + offset * y_step_size, np.pi) for offset in range(1, 5)
+        ]
+        self._target_box_poses = [
+            {'pose': (1.0, pose[1], pose[2]), 'digit': None} for pose in target_box_detect_poses
+        ]
+        detect_bridge_poses = [
+            (BRIDGE_DETECT_AREA_MIN_X, BRIDGE_DETECT_AREA_MIN_Y, np.pi / 2),
+            (BRIDGE_DETECT_AREA_MAX_X, BRIDGE_DETECT_AREA_MAX_Y, np.pi / 2)
+        ]
+
         while not rospy.is_shutdown():
+            if self._navigate_state == self.NAV_STATE_DONE:
+                continue
+
             if self._navigate_state == self.NAV_STATE_IDLE:
                 if curr_goal_idx < len(corridor_goal_poses):
                     self.send_goal(*corridor_goal_poses[curr_goal_idx])
@@ -452,17 +523,66 @@ class SimpleCoveragePlanner:
                             else:
                                 rospy.logwarn(f'Could not find feasible pose for capturing box at {box}')
 
+                    elif detect_bridge_poses:
+                        self.send_goal(*detect_bridge_poses.pop(0))
+                        self._curr_goal_type = self.GOAL_TYPE_DETECT_BRIDGE
+
+                    elif self._bridge_detect_start:
+                        trigger = Bool()
+                        trigger.data = False
+                        self._start_bridge_detect_pub.publish(trigger)
+                        self._bridge_detect_start = False
+                        self._curr_goal_type = self.GOAL_TYPE_EXPLORE
+
+                    elif (self._cross_bridge_goal_pose is not None and
+                          self._cross_bridge_pose_idx < len(self._cross_bridge_goal_pose)):
+                        if self._cross_bridge_pose_idx == 1:
+                            cmd = Bool()
+                            cmd.data = True
+                            self._bridge_open_pub.publish(cmd)
+                        self.send_goal(*self._cross_bridge_goal_pose[self._cross_bridge_pose_idx])
+                        self._curr_goal_type = self.GOAL_TYPE_CROSS_BRIDGE
+                        self._cross_bridge_pose_idx += 1
+
+                    elif self._num_target_box_detected < len(self._target_box_poses):
+                        # if target_box_detect_goal_idx < len(target_box_detect_poses):
+                        self.send_goal(*target_box_detect_poses[self._num_target_box_detected])
+                        self._curr_goal_type = self.GOAL_TYPE_CAPTURE_TARGET
+                        # target_box_detect_goal_idx += 1
+
+                    else:
+                        if self._least_occ is not None:
+                            for target in self._target_box_poses:
+                                if self._least_occ == target['digit']:
+                                    self.send_goal(*target['pose'])
+                        else:
+                            self._curr_goal_type = self.GOAL_TYPE_RESULT
+
             elif self._navigate_state == self.NAV_STATE_NAVIGATING:
                 if (self._goal_status in (2, 3, 4, 5, 8, 9) or
                     self._check_goal_reached(*self._current_goal)):
-                    if self._curr_goal_type == self.GOAL_TYPE_EXPLORE:
+                    if self._curr_goal_type in (self.GOAL_TYPE_EXPLORE, self.GOAL_TYPE_DETECT_BRIDGE, self.GOAL_TYPE_CROSS_BRIDGE):
                         self._navigate_state = self.NAV_STATE_IDLE
-                    elif self._curr_goal_type == self.GOAL_TYPE_CAPTURE:
+                    elif self._curr_goal_type in (self.GOAL_TYPE_CAPTURE, self.GOAL_TYPE_CAPTURE_TARGET):
                         self._navigate_state = self.NAV_STATE_CAPTURING
 
             elif self._navigate_state == self.NAV_STATE_GOAL_SENT:
                 if self._goal_status == 1:
                     self._navigate_state = self.NAV_STATE_NAVIGATING
+
+            if (self._curr_goal_type == self.GOAL_TYPE_DETECT_BRIDGE and
+                not self._bridge_detect_start and
+                detect_bridge_poses):
+                current_pose = self.get_current_pose()
+                if current_pose is not None:
+                    if (current_pose[0] > BRIDGE_DETECT_AREA_MIN_X and
+                        current_pose[1] > BRIDGE_DETECT_AREA_MIN_Y and
+                        current_pose[0] < BRIDGE_DETECT_AREA_MAX_X and
+                        current_pose[1] < BRIDGE_DETECT_AREA_MAX_Y):
+                        trigger = Bool()
+                        trigger.data = True
+                        self._start_bridge_detect_pub.publish(trigger)
+                        self._bridge_detect_start = True
 
             pose_print_timer += 1
             if pose_print_timer >= (rate / pose_print_rate):
