@@ -447,7 +447,7 @@ class SimpleCoveragePlanner:
         self._target_box_poses = [
             {'pose': (1.0, pose[1], pose[2]), 'digit': None} for pose in target_box_detect_poses
         ]
-        detect_bridge_poses = [BRIDGE_DETECT_AREA_MIN_X, (BRIDGE_DETECT_AREA_MIN_Y + BRIDGE_DETECT_AREA_MAX_Y) / 2, np.pi]
+        detect_bridge_poses = [(BRIDGE_DETECT_AREA_MIN_X + BRIDGE_DETECT_AREA_MAX_X) / 2, (BRIDGE_DETECT_AREA_MIN_Y + BRIDGE_DETECT_AREA_MAX_Y) / 2, np.pi]
 
         while not rospy.is_shutdown():
             if self._navigate_state == self.NAV_STATE_DONE:
@@ -539,9 +539,7 @@ class SimpleCoveragePlanner:
                         self._curr_goal_type = self.GOAL_TYPE_DETECT_BRIDGE
 
                     elif self._curr_goal_type == self.GOAL_TYPE_DETECT_BRIDGE:
-                        rospy.loginfo('Detecting bridge...')
                         if self._cross_bridge_goal_pose is not None and self._bridge_detect_start:
-                            rospy.loginfo('Start bridge detection...')
                             trigger = Bool()
                             trigger.data = False
                             self._start_bridge_detect_pub.publish(trigger)
@@ -578,13 +576,13 @@ class SimpleCoveragePlanner:
                     if self._curr_goal_type in (self.GOAL_TYPE_EXPLORE, self.GOAL_TYPE_DETECT_BRIDGE, self.GOAL_TYPE_CROSS_BRIDGE):
                         if (self._curr_goal_type == self.GOAL_TYPE_DETECT_BRIDGE and
                             not self._bridge_detect_start):
-                            rospy.loginfo('starting bridge detection...')
                             current_pose = self.get_current_pose()
                             if current_pose is not None:
                                 if (current_pose[0] > BRIDGE_DETECT_AREA_MIN_X and
                                     current_pose[1] > BRIDGE_DETECT_AREA_MIN_Y and
                                     current_pose[0] < BRIDGE_DETECT_AREA_MAX_X and
                                     current_pose[1] < BRIDGE_DETECT_AREA_MAX_Y):
+                                    rospy.loginfo('Starting bridge detection...')
                                     trigger = Bool()
                                     trigger.data = True
                                     self._start_bridge_detect_pub.publish(trigger)
