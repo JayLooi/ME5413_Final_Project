@@ -1,14 +1,14 @@
 TrajectoryPlannerROS:
 
   # Robot Configuration Parameters
-  acc_lim_x: 10.0
-  acc_lim_theta:  20.0
+  acc_lim_x: 15.0
+  acc_lim_theta:  15.0
 
-  max_vel_x: 0.5
+  max_vel_x: 0.6
   min_vel_x: 0.1
 
-  max_vel_theta: 1.57
-  min_vel_theta: -1.57
+  max_vel_theta: 1.2
+  min_vel_theta: -1.2
   min_in_place_vel_theta: 0.314
 
   holonomic_robot: false
@@ -41,6 +41,6 @@ TrajectoryPlannerROS:
   publish_cost_grid_pc: true
 
   #Oscillation Prevention Parameters
-  oscillation_reset_dist: 0.05 #How far the robot must travel in meters before oscillation flags are reset (double, default: 0.05)
+  oscillation_reset_dist: 0.15 #How far the robot must travel in meters before oscillation flags are reset (double, default: 0.05)
   escape_reset_dist: 0.1
   escape_reset_theta: 0.1
