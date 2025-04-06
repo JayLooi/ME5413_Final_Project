@@ -19,7 +19,7 @@ plugins:
   - {name: range_sensor_layer, type: "range_sensor_layer::RangeSensorLayer"}
 
 inflater_layer:
-  inflation_radius: 0.30
+  inflation_radius: 0.25
 
 obstacles_layer:
   observation_sources: scan
