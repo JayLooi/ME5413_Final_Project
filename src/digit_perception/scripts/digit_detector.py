@@ -87,7 +87,7 @@ class DigitRecognizer:
                 minimum = np.Inf
                 least_occ_digit = None
                 for k, v in self.detected_numbers.items():
-                    if v < minimum:
+                    if v != 0 and v < minimum:
                         least_occ_digit = k
                         minimum = v
 

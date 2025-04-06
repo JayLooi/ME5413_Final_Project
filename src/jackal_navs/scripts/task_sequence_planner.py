@@ -551,13 +551,13 @@ class SimpleCoveragePlanner:
                                 position = np.array(pose[0:2])
                                 area_to_navigate = [position - offset_robot, position + offset_robot]
                                 if pose[2] == 0.0:
-                                    area_to_navigate[1][0] - IMG_CAPTURE_DIST
+                                    area_to_navigate[0][0] - IMG_CAPTURE_DIST
                                 elif pose[2] == np.pi:
-                                    area_to_navigate[0][0] + IMG_CAPTURE_DIST
+                                    area_to_navigate[1][0] + IMG_CAPTURE_DIST
                                 elif pose[2] == np.pi / 2:
-                                    area_to_navigate[1][1] - IMG_CAPTURE_DIST
+                                    area_to_navigate[0][1] - IMG_CAPTURE_DIST
                                 elif pose[2] == -np.pi / 2:
-                                    area_to_navigate[0][1] + IMG_CAPTURE_DIST
+                                    area_to_navigate[1][1] + IMG_CAPTURE_DIST
                                 row_min, col_min = self._transform_point_to_coverage_map(area_to_navigate[0])
                                 row_max, col_max = self._transform_point_to_coverage_map(area_to_navigate[1])
                                 if np.all(boxes_grid_map[row_min:row_max+1, col_min:col_max+1] == 0):
