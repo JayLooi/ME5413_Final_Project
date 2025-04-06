@@ -170,18 +170,19 @@ class SimpleCoveragePlanner:
                 point[1] < self._coverage_map_limit[1])
 
     def _laserscan_cb(self, msg):
-        current_pose = self.get_current_pose()
-        if current_pose is not None and self._check_bound(current_pose):
-            try:
-                points = self._transform_laserscan_to_map_frame(msg)
+        if self._curr_goal_type == self.GOAL_TYPE_EXPLORE:
+            current_pose = self.get_current_pose()
+            if current_pose is not None and self._check_bound(current_pose):
+                try:
+                    points = self._transform_laserscan_to_map_frame(msg)
 
-            except Exception as e:
-                print(e)
-                return
+                except Exception as e:
+                    print(e)
+                    return
 
-            if points:
-                detected_lines = self._split_and_merge(points, outlier_thres=0.1)
-                self._detect_box(detected_lines, current_pose)
+                if points:
+                    detected_lines = self._split_and_merge(points, outlier_thres=0.1)
+                    self._detect_box(detected_lines, current_pose)
 
     def _detect_box(self, lines, current_pose):
         for p1, p2 in lines:
