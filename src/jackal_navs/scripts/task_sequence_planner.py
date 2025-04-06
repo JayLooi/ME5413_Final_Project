@@ -70,14 +70,10 @@ class SimpleCoveragePlanner:
         self._bridge_detect_start = False
         self._cross_bridge_goal_pose = None
         self._cross_bridge_pose_idx = 0
-        self._detect_bridge_poses = [11, -12, np.pi]
-        self._redetect_bridge = False
+        self._detect_bridge_poses = [(BRIDGE_DETECT_AREA_MIN_X + BRIDGE_DETECT_AREA_MAX_X) / 2, (BRIDGE_DETECT_AREA_MIN_Y + BRIDGE_DETECT_AREA_MAX_Y) / 2, np.pi]
         self._blockade_goal_pose = None
         self._least_occ = None
         self._goal_status = -1
-        self._cross_bridge_failed_attempts = 0
-        self._max_bridge_attempts = 5  # Maximum replan attempts
-        self._replan_wait_time = 2.0  # Seconds to wait before replanning
 
         self._img_num = 0
         self._cov_map_mutex = Lock()
@@ -113,55 +109,7 @@ class SimpleCoveragePlanner:
             if (self._curr_goal_type == self.GOAL_TYPE_CROSS_BRIDGE and 
                 self._goal_status in [4, 8]):  # ABORTED, LOST
                 rospy.logwarn("Bridge crossing goal failed! Will ignore and retry previous pose...")
-
-                # Restart detection and alignment process
-                # self._prepare_for_bridge_detection = False
-                # self._bridge_detect_start = False
-                # rospy.loginfo('Restarting bridge detection...')
-                # trigger = Bool()
-                # trigger.data = True
-                # self._start_bridge_detect_pub.publish(trigger)
-                # self._bridge_detect_start = True
-                # self._cross_bridge_goal_pose = None
-                # self._detect_bridge_poses = [11, -12, np.pi]
-
-                # self._cross_bridge_pose_idx -= 1
-                # if self._cross_bridge_pose_idx < 0:
-                #     self._cross_bridge_pose_idx = 0
-
-                # Restart alignment process
                 self._navigate_state = self.NAV_STATE_IDLE
-
-                # if self._cross_bridge_failed_attempts <= self._max_bridge_attempts:
-                #     self.send_goal(*self._blockade_goal_pose)
-                # if self._cross_bridge_failed_attempts <= 3:
-                #     if self._cross_bridge_goal_pose is not None:
-                #         self._redetect_bridge = True
-                #         self._cross_bridge_failed_attempts += 1
-                #         # rospy.loginfo(f'_cross_bridge_failed_attempts rate: {self._cross_bridge_failed_attempts}')
-                #         rospy.loginfo("Redetect")
-                #         self._cross_bridge_goal_pose = None         
-                #         self._cross_bridge_pose_idx = 0
-                #         trigger = Bool()
-                #         trigger.data = True
-                #         self._start_bridge_detect_pub.publish(trigger)
-                #         self._redetect_bridge = True
-                #         self._navigate_state = self.NAV_STATE_IDLE # idle to wait for result for bridge detection
-                # else:
-                #     rospy.loginfo(f'_blockade_goal_pose: {self._blockade_goal_pose}')
-                #     self.send_goal(*self._blockade_goal_pose)
-                #     self._redetect_bridge = False
-                    # rospy.Timer(rospy.Duration(self._replan_wait_time), 
-                    #         self._replan_bridge_crossing, oneshot=True)
-
-                # if self._blockade_goal_pose is not None:
-                #     self._cross_bridge_failed_attempts += 1
-                #     if self._cross_bridge_failed_attempts >= 2:
-                #         self.send_goal(*self._blockade_goal_pose)
-                #     self._blockade_goal_pose = None         
-                #     trigger = Bool()
-                #     trigger.data = True
-                #     self._start_bridge_detect_pub.publish(trigger)
 
     def spawn_objects(self):
         self._sub_respawn_objects_pub.publish(Int16(1))
@@ -422,7 +370,7 @@ class SimpleCoveragePlanner:
                 transformed = do_transform_point(msg, transform)
                 self._cross_bridge_goal_pose = [
                     (transformed.point.x, transformed.point.y, np.pi),
-                    (self._blockade_goal_pose[0] + 0.5, self._blockade_goal_pose[1], np.pi),
+                    (self._blockade_goal_pose[0] + 0.55, self._blockade_goal_pose[1], np.pi),
                     (5.5, self._blockade_goal_pose[1], np.pi),
                     (2.0, self._blockade_goal_pose[1], np.pi)
                 ]
@@ -474,15 +422,14 @@ class SimpleCoveragePlanner:
                 yaw_diff = 0.0              # Don't care exploration goal yaw angle
             else:
                 tolerance_increase = 1.0
-                # if (self._cross_bridge_pose_idx > 3):
-                #     yaw_diff = 0.0
-            minimize_tolerance_ratio = 1.0
+
+            minimize_yaw_tolerance_ratio = 1.0
             # stricter for alignment before detect bridge
             if self._prepare_for_bridge_detection is True:
-                minimize_tolerance_ratio = 0.675
+                minimize_yaw_tolerance_ratio = 0.675
 
             if (dist_to_goal < tolerance_increase * self._goal_xy_tol and
-                yaw_diff < tolerance_increase * self._goal_yaw_tol * minimize_tolerance_ratio):
+                yaw_diff < tolerance_increase * self._goal_yaw_tol * minimize_yaw_tolerance_ratio):
                 self._nav_cancel.publish(GoalID())
                 return True
 
@@ -660,7 +607,6 @@ class SimpleCoveragePlanner:
                                 if self._least_occ == target['digit']:
                                     self.send_goal(*target['pose'])
                         else:
-                            if self._redetect_bridge is False:
                                 self._curr_goal_type = self.GOAL_TYPE_RESULT
 
             elif self._navigate_state == self.NAV_STATE_NAVIGATING:
