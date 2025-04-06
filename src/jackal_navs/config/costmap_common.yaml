@@ -11,7 +11,7 @@ transform_tolerance: 0.5
 meter_scoring: true
 
 footprint: [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
-footprint_padding: 0.12
+footprint_padding: 0.1
 
 plugins:
   - {name: obstacles_layer, type: "costmap_2d::ObstacleLayer"}
@@ -19,7 +19,7 @@ plugins:
   - {name: range_sensor_layer, type: "range_sensor_layer::RangeSensorLayer"}
 
 inflater_layer:
-  inflation_radius: 0.22
+  inflation_radius: 0.3
 
 obstacles_layer:
   observation_sources: scan

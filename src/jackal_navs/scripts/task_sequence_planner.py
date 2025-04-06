@@ -370,7 +370,7 @@ class SimpleCoveragePlanner:
                 transformed = do_transform_point(msg, transform)
                 self._cross_bridge_goal_pose = [
                     (transformed.point.x, transformed.point.y, np.pi),
-                    (self._blockade_goal_pose[0] + 0.55, self._blockade_goal_pose[1], np.pi),
+                    (self._blockade_goal_pose[0] + 0.5, self._blockade_goal_pose[1], np.pi),
                     (5.5, self._blockade_goal_pose[1], np.pi),
                     (2.0, self._blockade_goal_pose[1], np.pi)
                 ]
