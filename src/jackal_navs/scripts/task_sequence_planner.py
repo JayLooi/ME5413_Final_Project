@@ -59,7 +59,7 @@ class SimpleCoveragePlanner:
         self._box_locations = []
         self._goal_box_poses = []
         self._goal_xy_tol = 0.4
-        self._goal_yaw_tol = 0.27
+        self._goal_yaw_tol = 0.32
         self._proximity = scan_proximity
         self._navigate_state = self.NAV_STATE_IDLE
         self._curr_goal_type = self.GOAL_TYPE_EXPLORE
@@ -479,7 +479,7 @@ class SimpleCoveragePlanner:
             minimize_tolerance_ratio = 1.0
             # stricter for alignment before detect bridge
             if self._prepare_for_bridge_detection is True:
-                minimize_tolerance_ratio = 0.8
+                minimize_tolerance_ratio = 0.675
 
             if (dist_to_goal < tolerance_increase * self._goal_xy_tol and
                 yaw_diff < tolerance_increase * self._goal_yaw_tol * minimize_tolerance_ratio):
