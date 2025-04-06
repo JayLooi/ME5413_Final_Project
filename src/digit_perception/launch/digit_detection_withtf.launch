@@ -1,0 +1,4 @@
+<launch>
+    <node name="digit_recognizer" pkg="digit_perception" type="digit_detector_withtf.py" output="screen" />
+</launch>
+

@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="bridge_detection" type="bridge_detector.py" name="bridge_detector_node"  output="screen"/>
+</launch>
