@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+  <xacro:include filename="$(find sick_scan_xd)/urdf/sick_scan.urdf.xacro"/>
+
+  <xacro:property name="mount" value="front_0"/>
+  <xacro:property name="parent" value="${mount}_mount"/>
+  <xacro:property name="name" value="tim551"/>
+
+  <xacro:sick_tim_5xx name="${name}" ros_topic="$(arg namespace)/sensors/${name}/scan"/>
+  <joint name="${name}_mount_link_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="${parent}"/>
+    <child link="${name}_mount_link"/>
+  </joint>
+</robot>

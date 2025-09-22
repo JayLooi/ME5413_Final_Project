@@ -13,52 +13,64 @@
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <thread>
 
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <std_msgs/Int16.h>
-#include <std_msgs/Bool.h>
-#include <visualization_msgs/MarkerArray.h>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/int16.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
-#include <ignition/math/Vector3.hh>
-#include <ignition/math/Pose3.hh>
-#include <gazebo/gazebo.hh>
-#include <gazebo/gazebo_client.hh>
-#include <gazebo/transport/transport.hh>
-#include <gazebo/common/common.hh>
-#include <gazebo/physics/physics.hh>
-#include <gazebo_msgs/DeleteModel.h>
+#include "gz/math/Vector3.hh"
+#include "gz/math/Pose3.hh"
+#include "gz/transport/Node.hh"
+#include "gz/msgs.hh"
+#include "gz/common/Util.hh"
+#include "gz/sim/EntityComponentManager.hh"
+#include "gz/sim/System.hh"
+// #include "gz/sim/Util.hh"
+// #include "gz/sim/World.hh"
+#include "gz/plugin/Register.hh"
+#include "ros_gz_interfaces/srv/delete_entity.hpp"
 
 namespace gazebo
 {
-class ObjectSpawner : public WorldPlugin
+class ObjectSpawner :
+    public gz::sim::System,
+    public gz::sim::ISystemConfigure,
+    public gz::sim::ISystemPreUpdate
 {
  public:
   std::string bridge_name;
   std::string cone_name;
-  ignition::math::Vector3d bridge_point; //@shuo is this one still needed?
+  gz::math::Vector3d bridge_point; //@shuo is this one still needed?
   std::vector<std::string> box_names;
-  std::vector<ignition::math::Vector3d> box_points;
+  std::vector<gz::math::Vector3d> box_points;
 
   ObjectSpawner();
   virtual ~ObjectSpawner();
-  void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf);
+  virtual void Configure(const gz::sim::Entity &_entity,
+                         const std::shared_ptr<const sdf::Element> &_sdf,
+                         gz::sim::EntityComponentManager &_ecm,
+                         gz::sim::EventManager &/*_eventMgr*/) override;
+  virtual void PreUpdate(const gz::sim::UpdateInfo &_info,
+                         gz::sim::EntityComponentManager &_ecm) override;
 
  private:
-  transport::PublisherPtr pub_factory_;
-  ros::NodeHandle nh_;
-  ros::Timer timer_;
-  ros::ServiceClient clt_delete_objects_;
-  ros::Subscriber sub_respawn_objects_;
-  ros::Subscriber sub_cmd_open_bridge_;
-  ros::Publisher pub_rviz_markers_;
-
-  visualization_msgs::MarkerArray box_markers_msg_;
+  gz::transport::Node gz_transport_node_;
+  rclcpp::Node::SharedPtr ros_node_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Client<ros_gz_interfaces::srv::DeleteEntity>::SharedPtr clt_delete_objects_;
+  rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr sub_respawn_objects_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_cmd_open_bridge_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_rviz_markers_;
+  visualization_msgs::msg::MarkerArray box_markers_msg_;
+  std::thread ros_thread_;
 
   bool bridge_open_called_;
   double bridge_position_;
   
-  void timerCallback(const ros::TimerEvent&);
+  void timerCallback();
+  void spawn_object(gz::msgs::EntityFactory& req_msg, const std::string& name, uint32_t timeout);
   void spawnRandomBridge();
   void spawnRandomBoxes();
   void deleteObject(const std::string& object_name);
@@ -66,11 +78,8 @@ class ObjectSpawner : public WorldPlugin
   void deleteCone();
   void spawnCone();
   void deleteBoxes();
-  void respawnCmdCallback(const std_msgs::Int16::ConstPtr& respawn_msg);
-  void openBridgeCallback(const std_msgs::Bool::ConstPtr& open_bridge_msg);
+  void respawnCmdCallback(const std_msgs::msg::Int16::ConstSharedPtr& respawn_msg);
+  void openBridgeCallback(const std_msgs::msg::Bool::ConstSharedPtr& open_bridge_msg);
 };
-
-// Register this plugin with the simulator
-GZ_REGISTER_WORLD_PLUGIN(ObjectSpawner)
 
 } // namespace gazebo

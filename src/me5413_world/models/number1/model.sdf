@@ -18,11 +18,17 @@
           </mesh>
         </geometry>
         <material>
-          <script>
-            <uri>model://number1/materials/scripts</uri>
-            <uri>model://number1/materials/textures</uri>
-            <name>Number/One</name>
-          </script>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0 0 0 1</specular>
+          <emissive>0 0 0 1</emissive>
+          <pbr>
+            <metal>
+              <albedo_map>model://number1/materials/textures/number1.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
+            </metal>
+          </pbr>
         </material>
       </visual>
     </link>

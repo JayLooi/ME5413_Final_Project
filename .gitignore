@@ -3,6 +3,8 @@
 devel/
 logs/
 build/
+install/
+log/
 bin/
 lib/
 msg_gen/
@@ -51,3 +53,6 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# Docker
+.env

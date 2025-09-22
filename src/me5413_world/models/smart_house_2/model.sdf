@@ -14,12 +14,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -35,12 +32,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -56,12 +50,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -77,12 +68,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -324,12 +312,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
           <ambient>0.996078 0.47451 0.0196078 1</ambient>
-          <shader type='pixel'/>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>0</layer>
@@ -406,12 +391,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
           <ambient>0.996078 0.47451 0.0196078 1</ambient>
-          <shader type='pixel'/>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>0</layer>
@@ -488,12 +470,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
           <ambient>0.435294 0.796078 0.67451 1</ambient>
-          <shader type='pixel'/>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>0</layer>
@@ -570,12 +549,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
           <ambient>0.435294 0.796078 0.67451 1</ambient>
-          <shader type='pixel'/>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>0</layer>
@@ -652,12 +628,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
           <ambient>0.996078 0.47451 0.0196078 1</ambient>
-          <shader type='pixel'/>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>0</layer>
@@ -734,12 +707,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -816,12 +786,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -898,12 +865,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -980,12 +944,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -1062,12 +1023,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>
@@ -1144,12 +1102,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
           <ambient>0.996078 0.47451 0.0196078 1</ambient>
-          <shader type='pixel'/>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>0</layer>
@@ -1226,12 +1181,9 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Grey</name>
-          </script>
-          <ambient>1 1 1 1</ambient>
-          <shader type='pixel'/>
+          <ambient>1.0 1.0 1.0 1.0</ambient>
+          <diffuse>0.7 0.7 0.7 1.0</diffuse>
+          <specular>0.01 0.01 0.01 1.0</specular>
         </material>
         <meta>
           <layer>1</layer>

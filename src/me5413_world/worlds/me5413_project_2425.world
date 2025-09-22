@@ -1,5 +1,28 @@
 <sdf version='1.7'>
   <world name='default'>
+    <!-- https://gazebosim.org/docs/latest/migrating_gazebo_classic_ros2_packages/#world-plugins -->
+    <!-- Add generic sensor plugins in the World so that the robot model for the robots to use -->
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin
+      filename="gz-sim-imu-system"
+      name="gz::sim::systems::Imu">
+    </plugin>
     <light name='sun' type='directional'>
       <cast_shadows>1</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
@@ -55,16 +78,16 @@
             </plane>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
+            <ambient>0.3 0.3 0.3 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
         </visual>
         <self_collide>0</self_collide>
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
+      <pose>0 0 0 0 -0 0</pose>
     </model>
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
@@ -88,30 +111,6 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>511 175000000</sim_time>
-      <real_time>38 774975833</real_time>
-      <wall_time>1740135810 967063267</wall_time>
-      <iterations>32109</iterations>
-      <model name='Construction Cone'>
-        <pose>5 22 2.59999 -1e-06 1e-06 2.4e-05</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>5 22 2.59999 -1e-06 1e-06 2.4e-05</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 -9.8 0 -0 0</acceleration>
-          <wrench>0 0 -9.8 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='ground_plane'>
-        <pose>0 0 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>0 0 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
       <model name='husky'>
         <pose>13.4539 21.0879 2.74275 -4e-06 -9e-06 -0.19683</pose>
         <scale>1 1 1</scale>
@@ -178,16 +177,6 @@
           <velocity>1e-06 5.4e-05 1.8e-05 -0.000551 9e-06 0</velocity>
           <acceleration>0 0 -0 -1e-06 -0 -0</acceleration>
           <wrench>0 0 -0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='person_standing'>
-        <pose>18 22 2.6 1e-06 -1e-06 -1.57</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>18 22 2.6 1e-06 -1e-06 -1.57</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-1.12463 1.59603 -1.57966 -1.61652 -1.23624 -0.044383</acceleration>
-          <wrench>-89.9704 127.683 -126.373 0 -0 0</wrench>
         </link>
       </model>
       <model name='polaris_ranger_ev'>
@@ -353,6 +342,7 @@
       </light>
     </state>
     <model name='smart_house_2'>
+      <plugin name="gazebo::ObjectSpawner" filename="object_spawner_gz_plugin"/>
       <link name='Floor_3'>
         <pose>0 0 2.5 0 -0 0</pose>
         <self_collide>0</self_collide>
@@ -366,12 +356,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -387,12 +374,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -408,12 +392,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -429,12 +410,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -676,12 +654,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
             <ambient>0.996078 0.47451 0.0196078 1</ambient>
-            <shader type='pixel'/>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>0</layer>
@@ -758,12 +733,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
             <ambient>0.996078 0.47451 0.0196078 1</ambient>
-            <shader type='pixel'/>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>0</layer>
@@ -840,12 +812,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
             <ambient>0.435294 0.796078 0.67451 1</ambient>
-            <shader type='pixel'/>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>0</layer>
@@ -922,12 +891,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
             <ambient>0.435294 0.796078 0.67451 1</ambient>
-            <shader type='pixel'/>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>0</layer>
@@ -1004,12 +970,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
             <ambient>0.996078 0.47451 0.0196078 1</ambient>
-            <shader type='pixel'/>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>0</layer>
@@ -1086,12 +1049,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -1168,12 +1128,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -1250,12 +1207,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -1332,12 +1286,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -1414,12 +1365,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -1496,12 +1444,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
             <ambient>0.996078 0.47451 0.0196078 1</ambient>
-            <shader type='pixel'/>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>0</layer>
@@ -1578,12 +1523,9 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Grey</name>
-            </script>
-            <ambient>1 1 1 1</ambient>
-            <shader type='pixel'/>
+            <ambient>1.0 1.0 1.0 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
           <meta>
             <layer>1</layer>
@@ -1649,7 +1591,7 @@
       </link>
       <static>1</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose>4.3604 -0.967227 0 0 -0 0</pose>
+      <pose>11 11 0 0 -0 0</pose>
     </model>
     <gui fullscreen='0'>
       <camera name='user_camera'>
@@ -1705,10 +1647,10 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>4.87118 31.1615 0 0 -0 0</pose>
+      <pose>5 22 2.59999 -1e-06 1e-06 2.4e-05</pose>
     </model>
     <model name='husky'>
-      <pose>-6.16575 30.0422 0.5 0 -0 0</pose>
+      <pose>13.4539 21.0879 2.74275 -4e-06 -9e-06 -0.19683</pose>
       <link name='base_link'>
         <collision name='collision'>
           <pose>0 0 0.1 0 -0 0</pose>
@@ -1753,7 +1695,7 @@
           <material>
             <script>
               <name>Gazebo/FlatBlack</name>
-              <uri>__default__</uri>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
             </script>
           </material>
         </visual>
@@ -1767,7 +1709,7 @@
           <material>
             <script>
               <name>Gazebo/Yellow</name>
-              <uri>__default__</uri>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
             </script>
           </material>
         </visual>
@@ -1781,7 +1723,7 @@
           <material>
             <script>
               <name>Gazebo/FlatBlack</name>
-              <uri>__default__</uri>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
             </script>
           </material>
         </visual>
@@ -1795,7 +1737,7 @@
           <material>
             <script>
               <name>Gazebo/FlatBlack</name>
-              <uri>__default__</uri>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
             </script>
           </material>
         </visual>
@@ -1807,10 +1749,9 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <name>Gazebo/Grey</name>
-              <uri>__default__</uri>
-            </script>
+            <ambient>0.3 0.3 0.3 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -1866,10 +1807,9 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <name>Gazebo/Grey</name>
-              <uri>__default__</uri>
-            </script>
+            <ambient>0.3 0.3 0.3 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -1948,10 +1888,9 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <name>Gazebo/Grey</name>
-              <uri>__default__</uri>
-            </script>
+            <ambient>0.3 0.3 0.3 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -2030,10 +1969,9 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <name>Gazebo/Grey</name>
-              <uri>__default__</uri>
-            </script>
+            <ambient>0.3 0.3 0.3 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -2112,10 +2050,9 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <name>Gazebo/Grey</name>
-              <uri>__default__</uri>
-            </script>
+            <ambient>0.3 0.3 0.3 1.0</ambient>
+            <diffuse>0.7 0.7 0.7 1.0</diffuse>
+            <specular>0.01 0.01 0.01 1.0</specular>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -2145,7 +2082,7 @@
           </ode>
         </physics>
       </joint>
-      <plugin name='husky_diff_controller' filename='libhusky_gazebo_plugins.so'>
+      <!-- <plugin name='husky_diff_controller' filename='libhusky_gazebo_plugins.so'>
         <alwaysOn>1</alwaysOn>
         <updateRate>100.0</updateRate>
         <backLeftJoint>back_left_joint</backLeftJoint>
@@ -2155,7 +2092,7 @@
         <wheelSeparation>0.5709</wheelSeparation>
         <wheelDiameter>0.3555</wheelDiameter>
         <torque>35</torque>
-      </plugin>
+      </plugin> -->
     </model>
     <model name='polaris_ranger_ev'>
       <link name='chassis'>
@@ -2183,11 +2120,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <collision name='chassis_bottom'>
@@ -2867,11 +2810,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -2934,11 +2883,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3001,11 +2956,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3107,11 +3068,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3205,11 +3172,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3264,11 +3237,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3328,11 +3307,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3390,11 +3375,17 @@
             </mesh>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>Polaris/Diffuse</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/Ranger_Diffuse.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3443,11 +3434,17 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>FNR_switch_F</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/FNR_switch_F.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <visual name='FNR_switch_R'>
@@ -3458,11 +3455,17 @@
             </box>
           </geometry>
           <material>
-            <script>
-              <uri>model://polaris_ranger_ev/materials/scripts</uri>
-              <uri>model://polaris_ranger_ev/materials/textures</uri>
-              <name>FNR_switch_R</name>
-            </script>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+            <pbr>
+              <metal>
+                <albedo_map>model://polaris_ranger_ev/materials/textures/FNR_switch_R.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <self_collide>0</self_collide>
@@ -3733,7 +3736,7 @@
           </ode>
         </physics>
       </joint>
-      <pose>-10.5932 26.3326 0 0 -0 0</pose>
+      <pose>9.09305 22.6416 2.60026 -0.000101 6.6e-05 -0.001628</pose>
     </model>
     <model name='person_standing'>
       <link name='link'>
@@ -3803,8 +3806,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>16.5354 25.3915 0 0 -0 0</pose>
+      <pose>18 22 2.6 1e-06 -1e-06 -1.57</pose>
     </model>
-    <plugin name='object_spawner_gz_plugin' filename='libobject_spawner_gz_plugin.so'/>
   </world>
 </sdf>

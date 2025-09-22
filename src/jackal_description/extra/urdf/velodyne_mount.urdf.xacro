@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+  <xacro:include filename="$(find jackal_description)/extra/urdf/include/vlp16_mount.urdf.xacro"/>
+  <xacro:vlp16_mount prefix="mid" parent_link="default_mount">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:vlp16_mount>
+</robot>

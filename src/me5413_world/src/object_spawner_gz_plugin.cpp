@@ -8,6 +8,11 @@
 
 #include "me5413_world/object_spawner_gz_plugin.hpp"
 
+#include <functional>
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 namespace gazebo
 {
 
@@ -18,46 +23,82 @@ const int MAX_X_COORD = 22.0;
 const int MAX_Y_COORD = 19.0;
 const int Z_COORD = 3.0;
 
-ObjectSpawner::ObjectSpawner() : WorldPlugin() {};
+ObjectSpawner::ObjectSpawner() {}
 
-ObjectSpawner::~ObjectSpawner() {};
+ObjectSpawner::~ObjectSpawner() {}
   
-void ObjectSpawner::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
+void ObjectSpawner::Configure(const gz::sim::Entity &_entity,
+                              const std::shared_ptr<const sdf::Element> &_sdf,
+                              gz::sim::EntityComponentManager &_ecm,
+                              gz::sim::EventManager &/*_eventMgr*/)
 {
-  transport::NodePtr node(new transport::Node());
-  node->Init(_world->Name());
-  clt_delete_objects_ = nh_.serviceClient<gazebo_msgs::DeleteModel>("/gazebo/delete_model");
-  this->timer_ = nh_.createTimer(ros::Duration(0.1), &ObjectSpawner::timerCallback, this);
-  this->pub_factory_ = node->Advertise<msgs::Factory>("~/factory");
-  this->sub_respawn_objects_ = nh_.subscribe("/rviz_panel/respawn_objects", 1, &ObjectSpawner::respawnCmdCallback, this);
-  this->sub_cmd_open_bridge_ = nh_.subscribe("/cmd_open_bridge", 1, &ObjectSpawner::openBridgeCallback, this);
-  this->pub_rviz_markers_ = nh_.advertise<visualization_msgs::MarkerArray>("/gazebo/ground_truth/box_markers", 0);
-  bridge_open_called_ = false;
-  return;
-};
+  if (!rclcpp::ok())
+  {
+    rclcpp::init(0, nullptr);
+  }
 
-void ObjectSpawner::timerCallback(const ros::TimerEvent&)
+  ros_node_ = std::make_shared<rclcpp::Node>("object_spawner");
+
+  clt_delete_objects_ = ros_node_->create_client<ros_gz_interfaces::srv::DeleteEntity>("/gazebo/delete_model");
+  this->timer_ = ros_node_->create_timer(100ms, std::bind(&ObjectSpawner::timerCallback, this));
+
+  auto respawn_cb = std::bind(&ObjectSpawner::respawnCmdCallback, this, std::placeholders::_1);
+  this->sub_respawn_objects_ = ros_node_->create_subscription<std_msgs::msg::Int16>("/rviz_panel/respawn_objects", 1, respawn_cb);
+
+  auto open_bridge_cb = std::bind(&ObjectSpawner::openBridgeCallback, this, std::placeholders::_1);
+  this->sub_cmd_open_bridge_ = ros_node_->create_subscription<std_msgs::msg::Bool>("/cmd_open_bridge", 1, open_bridge_cb);
+
+  this->pub_rviz_markers_ = ros_node_->create_publisher<visualization_msgs::msg::MarkerArray>("/gazebo/ground_truth/box_markers", 0);
+
+  bridge_open_called_ = false;
+
+  ros_thread_ = std::thread([this]() { rclcpp::spin(ros_node_); });
+}
+
+void ObjectSpawner::PreUpdate(const gz::sim::UpdateInfo &_info,
+                              gz::sim::EntityComponentManager &_ecm)
+{
+  
+}
+
+void ObjectSpawner::timerCallback()
 {
   // publish rviz markers
-  this->pub_rviz_markers_.publish(this->box_markers_msg_);
-
-  return;
+  this->pub_rviz_markers_->publish(this->box_markers_msg_);
 };
 
+void ObjectSpawner::spawn_object(gz::msgs::EntityFactory& req_msg, const std::string& name, uint32_t timeout)
+{
+  gz::msgs::Boolean rep;
+  bool result;
+
+  req_msg.set_name(name);
+
+  bool executed = this->gz_transport_node_.Request("/world/default/create", req_msg, timeout, rep, result);
+
+  if (executed && result)
+  {
+    std::cout << req_msg.name() << " spawned" << std::endl;
+  }
+  else
+  {
+    std::cout << req_msg.name() << " spawning failed" << std::endl;
+  }
+}
 
 void ObjectSpawner::spawnRandomBridge()
 {
-  msgs::Factory bridge_msg;
+  gz::msgs::EntityFactory bridge_msg;
   this->bridge_name = "bridge";
   bridge_msg.set_sdf_filename("model://bridge");
 
   std::srand(std::time(0));
   bridge_position_ = (static_cast<double>(std::rand()) / RAND_MAX * 0.5 + 0.25) * (MAX_X_COORD - MIN_X_COORD) + MIN_X_COORD;
-  msgs::Set(bridge_msg.mutable_pose(), ignition::math::Pose3d(
-    ignition::math::Vector3d(bridge_position_, 9.0, 2.6), 
-    ignition::math::Quaterniond(1.57079632679, 0, 0)));
-  this->pub_factory_->Publish(bridge_msg);
-  return;
+  gz::msgs::Set(bridge_msg.mutable_pose(), gz::math::Pose3d(
+    gz::math::Vector3d(bridge_position_, 9.0, 2.6), 
+    gz::math::Quaterniond(1.57079632679, 0, 0)));
+  
+  spawn_object(bridge_msg, this->bridge_name, 2000);
 };
 
 void ObjectSpawner::spawnRandomBoxes()
@@ -72,7 +113,7 @@ void ObjectSpawner::spawnRandomBoxes()
   std::vector<int> box_nums = {1, 2, 3, 4, 5}; // can contain any positive number, but maek sure there's only one solution
   if (box_labels.size() < 1 || box_nums.size() < 1)
   {
-    ROS_ERROR("The box_labels and box_nums should not be empty! Stoppping the spawning process");
+    RCLCPP_ERROR(ros_node_->get_logger(), "The box_labels and box_nums should not be empty! Stoppping the spawning process");
     return;
   }
 
@@ -97,30 +138,30 @@ void ObjectSpawner::spawnRandomBoxes()
   const double spacing = (MAX_X_COORD - MIN_X_COORD)/(box_labels.size() + 1);
   for (int i = 0; i < box_labels.size(); i++)
   {
-    const ignition::math::Vector3d point = ignition::math::Vector3d(spacing*(i + 1) + MIN_X_COORD, 0.0, Z_COORD);
-    msgs::Factory box_msg;
+    const gz::math::Vector3d point = gz::math::Vector3d(spacing*(i + 1) + MIN_X_COORD, 0.0, Z_COORD);
+    gz::msgs::EntityFactory box_msg;
     const std::string box_name = "number" + std::to_string(box_labels[i]);
     this->box_names.push_back(box_name);
     box_msg.set_sdf_filename("model://" + box_name);
-    msgs::Set(box_msg.mutable_pose(), ignition::math::Pose3d(point, ignition::math::Quaterniond(0, 0, 0)));
-    this->pub_factory_->Publish(box_msg);
-    ROS_DEBUG_STREAM("Generated " << box_name << " at " << point);
-    common::Time::MSleep(500);
+    gz::msgs::Set(box_msg.mutable_pose(), gz::math::Pose3d(point, gz::math::Quaterniond(0, 0, 0)));
+    spawn_object(box_msg, box_name, 2000);
+    RCLCPP_DEBUG_STREAM(ros_node_->get_logger(), "Generated " << box_name << " at " << point);
+    GZ_SLEEP_MS(500);
   }
 
   // Generate random box points
   // visualization_msgs::MarkerArray text_markers_msg;
   for (int i = 0; i < boxes.size(); i++)
   {
-    ignition::math::Vector3d point;
+    gz::math::Vector3d point;
     bool has_collision = true;
     // Check for collsions
     while (has_collision)
     {
       has_collision = false;
-      point = ignition::math::Vector3d(static_cast<double>(std::rand()) / RAND_MAX * (MAX_X_COORD - MIN_X_COORD) + MIN_X_COORD,
-                                       static_cast<double>(std::rand()) / RAND_MAX * (MAX_Y_COORD - MIN_Y_COORD) + MIN_Y_COORD,
-                                       Z_COORD);
+      point = gz::math::Vector3d(static_cast<double>(std::rand()) / RAND_MAX * (MAX_X_COORD - MIN_X_COORD) + MIN_X_COORD,
+                                 static_cast<double>(std::rand()) / RAND_MAX * (MAX_Y_COORD - MIN_Y_COORD) + MIN_Y_COORD,
+                                 Z_COORD);
       for (const auto& pre_point : this->box_points)
       {
         const double dist = (point - pre_point).Length();
@@ -136,14 +177,14 @@ void ObjectSpawner::spawnRandomBoxes()
     this->box_points.push_back(point);
     
     // Publish gazebo model for this box
-    msgs::Factory box_msg;
-    const std::string box_name = "number" + std::to_string(boxes[i][0]);
-    box_msg.set_sdf_filename("model://" + box_name);
-    this->box_names.push_back("number" + std::to_string(boxes[i][0]) + "_" + std::to_string(boxes[i][1]));
-    msgs::Set(box_msg.mutable_pose(), ignition::math::Pose3d(point, ignition::math::Quaterniond(0, 0, 0)));
-    this->pub_factory_->Publish(box_msg);
-    ROS_DEBUG_STREAM("Generated " << box_name << " at " << point);
-    common::Time::MSleep(500);
+    gz::msgs::EntityFactory box_msg;
+    const std::string box_name = "number" + std::to_string(boxes[i][0]) + "_" + std::to_string(boxes[i][1]);
+    box_msg.set_sdf_filename("model://number" + std::to_string(boxes[i][0]));
+    this->box_names.push_back(box_name);
+    gz::msgs::Set(box_msg.mutable_pose(), gz::math::Pose3d(point, gz::math::Quaterniond(0, 0, 0)));
+    spawn_object(box_msg, box_name, 2000);
+    RCLCPP_DEBUG_STREAM(ros_node_->get_logger(), "Generated " << box_name << " at " << point);
+    GZ_SLEEP_MS(500);
     // // Publish rviz marker for this box
     // visualization_msgs::Marker box_marker;
     // box_marker.header.frame_id = "world";
@@ -185,63 +226,56 @@ void ObjectSpawner::spawnRandomBoxes()
 
   // // merge the two marker arrays
   // this->box_markers_msg_.markers.insert(this->box_markers_msg_.markers.end(), text_markers_msg.markers.begin(), text_markers_msg.markers.end());
-
-  return;
 };
 
 void ObjectSpawner::deleteObject(const std::string& object_name)
 {
-  gazebo_msgs::DeleteModel delete_model_srv;
-  delete_model_srv.request.model_name = object_name;
-  this->clt_delete_objects_.call(delete_model_srv);
-  if (delete_model_srv.response.success == true)
+  auto request = std::make_shared<ros_gz_interfaces::srv::DeleteEntity::Request>();
+  auto entity = ros_gz_interfaces::msg::Entity();
+  entity.name = object_name;
+  entity.type = gz::msgs::Entity::MODEL;
+  request->entity = entity;
+  auto result = clt_delete_objects_->async_send_request(request);
+  if (result.wait_for(std::chrono::seconds(1)) == std::future_status::ready)
   {
-    ROS_INFO_STREAM("Object: " << object_name << " successfully deleted");
+    RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Object: " << object_name << " successfully deleted");
   }
   else
   {
-    ROS_ERROR_STREAM("Failed to delete Object: " << object_name << std::endl);
+    RCLCPP_ERROR_STREAM(ros_node_->get_logger(), "Failed to delete Object: " << object_name << std::endl);
   }
-
-  return;
 };
 
 void ObjectSpawner::deleteBridge()
 {
   deleteObject(this->bridge_name);
   this->bridge_name = "";
-  this->bridge_point = ignition::math::Vector3d();
-
-  return;
+  this->bridge_point = gz::math::Vector3d();
 };
 
 void ObjectSpawner::spawnCone()
 {
-  msgs::Factory cone_msg;
+  gz::msgs::EntityFactory cone_msg;
   this->cone_name = "Construction Barrel";
   cone_msg.set_sdf_filename("model://construction_barrel");
 
-  msgs::Set(cone_msg.mutable_pose(), ignition::math::Pose3d(
-    ignition::math::Vector3d(bridge_position_ + 0.8, 7.0, 3.0), //centre of bridge
-    ignition::math::Quaterniond(0, 0, 0)));
-  this->pub_factory_->Publish(cone_msg);
-
-  return;
+  gz::msgs::Set(cone_msg.mutable_pose(), gz::math::Pose3d(
+    gz::math::Vector3d(bridge_position_ + 0.8, 7.0, 3.0), //centre of bridge
+    gz::math::Quaterniond(0, 0, 0)));
+  spawn_object(cone_msg, this->cone_name, 2000);
 };
 
 void ObjectSpawner::deleteCone()
 {
   deleteObject(this->cone_name);
   this->cone_name = "";
-
-  return;
 };
 
 
 void ObjectSpawner::deleteBoxes()
 {
   this->box_markers_msg_.markers.clear();
-  this->pub_rviz_markers_.publish(this->box_markers_msg_);
+  this->pub_rviz_markers_->publish(this->box_markers_msg_);
 
   for (const auto& box_name: this->box_names)
   {
@@ -249,11 +283,9 @@ void ObjectSpawner::deleteBoxes()
   }
   this->box_names.clear();
   this->box_points.clear();
-
-  return;
 };
 
-void ObjectSpawner::respawnCmdCallback(const std_msgs::Int16::ConstPtr& respawn_msg)
+void ObjectSpawner::respawnCmdCallback(const std_msgs::msg::Int16::ConstSharedPtr& respawn_msg)
 {
   const int cmd = respawn_msg->data;
   if (cmd == 0)
@@ -261,7 +293,7 @@ void ObjectSpawner::respawnCmdCallback(const std_msgs::Int16::ConstPtr& respawn_
     deleteBridge();
     deleteCone();
     deleteBoxes();
-    ROS_INFO_STREAM("Random Objects Cleared!");
+    RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Random Objects Cleared!");
   }
   else if (cmd == 1)
   {
@@ -271,18 +303,16 @@ void ObjectSpawner::respawnCmdCallback(const std_msgs::Int16::ConstPtr& respawn_
     spawnRandomBridge();
     spawnRandomBoxes();
     spawnCone();
-    ROS_INFO_STREAM("Random Objects Respawned!");
+    RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Random Objects Respawned!");
     bridge_open_called_ = false;
   }
   else
   {
-    ROS_INFO_STREAM("Respawn Command Not Recognized!");
+    RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Respawn Command Not Recognized!");
   }
-
-  return;
 };
 
-void ObjectSpawner::openBridgeCallback(const std_msgs::Bool::ConstPtr& open_bridge_msg)
+void ObjectSpawner::openBridgeCallback(const std_msgs::msg::Bool::ConstSharedPtr& open_bridge_msg)
 {
   const bool open_bridge = open_bridge_msg->data;
   if (open_bridge == true)
@@ -291,20 +321,28 @@ void ObjectSpawner::openBridgeCallback(const std_msgs::Bool::ConstPtr& open_brid
     {
       bridge_open_called_ = true;
       deleteCone();
-      ROS_INFO_STREAM("Bridge will now open for 10s");
-      common::Time::Sleep(10);
+      RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Bridge will now open for 10s");
+      GZ_SLEEP_MS(10);
       spawnCone();
-      ROS_INFO_STREAM("Bridge is now closed, cannot be opened again");
+      RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Bridge is now closed, cannot be opened again");
     }
     else
     {
-      ROS_INFO_STREAM("Bridge has been opened before, cannot be opened again");
+      RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Bridge has been opened before, cannot be opened again");
     }
   }
   else
   {
-    ROS_INFO_STREAM("Bridge open command is false, nothing to be done");
+    RCLCPP_INFO_STREAM(ros_node_->get_logger(),  "Bridge open command is false, nothing to be done");
   }
 }
 
 } // namespace gazebo
+
+// Register this plugin with the simulator
+GZ_ADD_PLUGIN(
+  gazebo::ObjectSpawner,
+  gz::sim::System,
+  gazebo::ObjectSpawner::ISystemConfigure,
+  gazebo::ObjectSpawner::ISystemPreUpdate
+);

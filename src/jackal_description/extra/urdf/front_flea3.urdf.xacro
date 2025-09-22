@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find jackal_description)/extra/urdf/include/camera_mount.urdf.xacro"/>
+  <xacro:include filename="$(find jackal_description)/extra/urdf/include/pointgrey_flea3.urdf.xacro"/>
+
+  <xacro:property name="name" value="front_camera"/>
+  <xacro:property name="tilt" value="0."/>
+  <xacro:property name="tower" value="1"/>
+  <xacro:property name="mount" value="front_0"/>
+  <xacro:property name="prefix" value="${mount}"/>
+  <xacro:property name="parent" value="${mount}_mount"/>
+
+  <xacro:pointgrey_flea3 frame="${prefix}_camera" name="${name}"
+    camera_x="0.0754" camera_y="0.029" camera_z="0.029"
+    camera_mass="0.085" hfov="1.0471975512" fps="60" width="640" height="512"/>
+
+  <!-- Mount Enabled -->
+  <xacro:if value="${tower}">
+    <xacro:camera_mount prefix="${prefix}" tilt="${tilt}"/>
+
+    <joint name="${prefix}_camera_mount_joint" type="fixed">
+      <origin xyz="$(optenv JACKAL_FLEA3_OFFSET 0 0 0)"
+              rpy="$(optenv JACKAL_FLEA3_RPY 0 0 0)"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}_camera_mount"/>
+    </joint>
+
+    <joint name="${prefix}_camera_bracket_joint" type="fixed">
+      <origin xyz="0.020 0 0.0245" rpy="0 0 0"/>
+      <parent link="${prefix}_camera_beam"/>
+      <child link="${prefix}_camera"/>
+    </joint>
+  </xacro:if>
+
+  <!-- Mount Disabled -->
+  <xacro:unless value="${tower}">
+    <link name="${prefix}_camera_base"/>
+    <joint name="${prefix}_camera_base_joint" type="fixed">
+      <origin xyz="$(optenv JACKAL_FLEA3_OFFSET 0 0 0)"
+              rpy="$(optenv JACKAL_FLEA3_RPY 0 0 0)"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}_camera_base"/>
+    </joint>
+    <joint name="${prefix}_camera_joint" type="fixed">
+      <origin xyz="0 0 0.0145"
+              rpy="0 0 0"/>
+      <parent link="${prefix}_camera_base"/>
+      <child link="${prefix}_camera"/>
+    </joint>
+  </xacro:unless>
+</robot>

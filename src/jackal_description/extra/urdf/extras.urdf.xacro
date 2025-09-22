@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+  <xacro:include filename="$(find jackal_description)/extra/urdf/sick_tim551.urdf.xacro"/>
+  <xacro:include filename="$(find jackal_description)/extra/urdf/front_flea3.urdf.xacro"/>
+  <xacro:include filename="$(find jackal_description)/extra/urdf/velodyne_mount.urdf.xacro"/>
+</robot>
