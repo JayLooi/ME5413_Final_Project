@@ -1,7 +1,6 @@
 # ME5413_Final_Project — ROS 2 Port (Fork)
 
-This is a **ROS 2 port** of the original  
-[ME5413_Final_Project](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project)  
+This is a **ROS 2 port** of the original [ME5413_Final_Project](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project)  
 developed for the NUS ME5413 Autonomous Mobile Robotics course.
 
 > Original Authors: [Christina](https://github.com/ldaowen), [Ziggy](https://github.com/ziggyhuang), [Dongen](https://github.com/nuslde), and [Shuo](https://github.com/SS47816)
