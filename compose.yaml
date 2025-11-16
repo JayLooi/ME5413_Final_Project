@@ -1,0 +1,22 @@
+services:
+  ros2-jazzy:
+    image: nus-me5413/ros2_jazzy
+    container_name: me5413_ros2_jazzy
+    build:
+      context: ./
+      args:
+        ROS_DISTRO: jazzy
+        USERNAME: ros
+        USER_ID: ${USER_ID:-1000}
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_NITSHM=1
+      - XAUTHORITY=$XAUTHORITY
+      - HOME=/home/ros
+    volumes:
+      - /tmp/.X11-unix/:/tmp/.X11-unix/:rw
+      - ./:/home/ros/me5413-final-project/
+      - ~/ros/gazebo_models/:/home/ros/gazebo_models/
+    privileged: true
+    network_mode: host
+    gpus: all

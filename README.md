@@ -1,27 +1,28 @@
-# ME5413_Final_Project
+# ME5413_Final_Project — ROS 2 Port (Fork)
 
-NUS ME5413 Autonomous Mobile Robotics Final Project
-> Authors: [Christina](https://github.com/ldaowen), [Ziggy](https://github.com/ziggyhuang), [Dongen](https://github.com/nuslde), and [Shuo](https://github.com/SS47816)
+This is a **ROS 2 port** of the original  
+[ME5413_Final_Project](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project)  
+developed for the NUS ME5413 Autonomous Mobile Robotics course.
+
+> Original Authors: [Christina](https://github.com/ldaowen), [Ziggy](https://github.com/ziggyhuang), [Dongen](https://github.com/nuslde), and [Shuo](https://github.com/SS47816)
 
 ![Ubuntu 20.04](https://img.shields.io/badge/OS-Ubuntu_20.04-informational?style=flat&logo=ubuntu&logoColor=white&color=2bbc8a)
 ![ROS Noetic](https://img.shields.io/badge/Tools-ROS_Noetic-informational?style=flat&logo=ROS&logoColor=white&color=2bbc8a)
 ![C++](https://img.shields.io/badge/Code-C++-informational?style=flat&logo=c%2B%2B&logoColor=white&color=2bbc8a)
 ![Python](https://img.shields.io/badge/Code-Python-informational?style=flat&logo=Python&logoColor=white&color=2bbc8a)
-![GitHub Repo stars](https://img.shields.io/github/stars/NUS-Advanced-Robotics-Centre/ME5413_Final_Project?color=FFE333)
-![GitHub Repo forks](https://img.shields.io/github/forks/NUS-Advanced-Robotics-Centre/ME5413_Final_Project?color=FFE333)
 
 ![cover_image](src/me5413_world/media/gz_world.png)
 
 ## Dependencies
 
 * System Requirements:
-  * Ubuntu 20.04 (18.04 not yet tested)
-  * ROS Noetic (Melodic not yet tested)
+  * Ubuntu 24.04
+  * ROS 2 Jazzy
   * C++11 and above
-  * CMake: 3.0.2 and above
+  * CMake: 3.8 and above
 * This repo depends on the following standard ROS pkgs:
-  * `roscpp`
-  * `rospy`
+  * `rclcpp`
+  * `rclpy`
   * `rviz`
   * `std_msgs`
   * `nav_msgs`
@@ -30,41 +31,34 @@ NUS ME5413 Autonomous Mobile Robotics Final Project
   * `tf2`
   * `tf2_ros`
   * `tf2_geometry_msgs`
-  * `pluginlib`
-  * `map_server`
-  * `gazebo_ros`
-  * `jsk_rviz_plugins`
-  * `jackal_gazebo`
-  * `jackal_navigation`
-  * `velodyne_simulator`
-  * `teleop_twist_keyboard`
+  * `ros_gz`
+  * `clearpath_simulator`
+  * `pluginlib` (TBD)
+  * `map_server` (TBD)
+  * `jsk_rviz_plugins` (TBD)
+  * `velodyne_simulator` (TBD)
+  * `teleop_twist_keyboard` (TBD)
 * And this [gazebo_model](https://github.com/osrf/gazebo_models) repositiory
 
 ## Installation
 
 This repo is a ros workspace, containing three rospkgs:
 
-* `interactive_tools` are customized tools to interact with gazebo and your robot
 * `jackal_description` contains the modified jackal robot model descriptions
 * `me5413_world` the main pkg containing the gazebo world, and the launch files
+* `interactive_tools` are customized tools to interact with gazebo and your robot **(in progress of porting to ROS 2)**
 
-**Note:** If you are working on this project, it is encouraged to fork this repository and work on your own fork!
+It is encouraged to work within docker container environment for easier start.
 
-After forking this repo to your own github:
-
+### To build the docker image
 ```bash
-# Clone your own fork of this repo (assuming home here `~/`)
-cd
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/ME5413_Final_Project.git
-cd ME5413_Final_Project
+$ cd <repo_dir>
+$ ./build_docker_image.sh
+```
 
-# Install all dependencies
-rosdep install --from-paths src --ignore-src -r -y
-
-# Build
-catkin_make
-# Source 
-source devel/setup.bash
+### To run and enter the docker container
+```bash
+$ ./run_docker.sh
 ```
 
 To properly load the gazebo world, you will need to have the necessary model files in the `~/.gazebo/models/` directory.
