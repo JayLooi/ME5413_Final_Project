@@ -58,7 +58,23 @@ $ ./build_docker_image.sh
 
 ### To run and enter the docker container
 ```bash
+$ cd <repo_dir>
 $ ./run_docker.sh
+```
+
+### To build the packages
+```bash
+# inside the docker container
+$ cd ~/me5413-final-project
+$ colcon build # or to build only a package : colcon build --packages-select <package_name>
+```
+
+### To launch the simulation world
+```bash
+# inside the docker container
+$ cd ~/me5413-final-project
+$ . ./install/setup.bash
+$ ros2 launch me5413_world world.launch.py
 ```
 
 To properly load the gazebo world, you will need to have the necessary model files in the `~/.gazebo/models/` directory.
