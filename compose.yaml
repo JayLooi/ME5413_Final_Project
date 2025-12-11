@@ -16,7 +16,7 @@ services:
     volumes:
       - /tmp/.X11-unix/:/tmp/.X11-unix/:rw
       - ./:/home/ros/me5413-final-project/
-      - ~/ros/gazebo_models/:/home/ros/gazebo_models/
+      - ./gazebo_models/:/home/ros/gazebo_models/
     privileged: true
     network_mode: host
-    gpus: all
+    # gpus: all

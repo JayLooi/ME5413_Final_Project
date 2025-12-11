@@ -27,9 +27,9 @@ ObjectSpawner::ObjectSpawner() {}
 
 ObjectSpawner::~ObjectSpawner() {}
   
-void ObjectSpawner::Configure(const gz::sim::Entity &_entity,
-                              const std::shared_ptr<const sdf::Element> &_sdf,
-                              gz::sim::EntityComponentManager &_ecm,
+void ObjectSpawner::Configure(const gz::sim::Entity &,
+                               [[maybe_unused]] const std::shared_ptr<const sdf::Element> &_sdf,
+                               [[maybe_unused]] gz::sim::EntityComponentManager &_ecm,
                               gz::sim::EventManager &/*_eventMgr*/)
 {
   if (!rclcpp::ok())
@@ -55,8 +55,8 @@ void ObjectSpawner::Configure(const gz::sim::Entity &_entity,
   ros_thread_ = std::thread([this]() { rclcpp::spin(ros_node_); });
 }
 
-void ObjectSpawner::PreUpdate(const gz::sim::UpdateInfo &_info,
-                              gz::sim::EntityComponentManager &_ecm)
+void ObjectSpawner::PreUpdate( [[maybe_unused]] const gz::sim::UpdateInfo &_info,
+                               [[maybe_unused]] gz::sim::EntityComponentManager &_ecm)
 {
   
 }
@@ -126,9 +126,9 @@ void ObjectSpawner::spawnRandomBoxes()
   box_labels = std::vector<int>(box_labels.begin(), box_labels.begin() + NUM_BOX_TYPES);
   
   std::vector<std::vector<int>> boxes;
-  for (int i = 0; i < box_nums.size(); i++)
+  for (auto i = 0u; i < box_nums.size(); i++)
   {
-    for (int j = 0; j < box_nums[i]; j++)
+    for (auto j = 0; j < box_nums[i]; j++)
     {
       boxes.push_back(std::vector<int>{box_labels[i], j});
     }
@@ -136,7 +136,7 @@ void ObjectSpawner::spawnRandomBoxes()
 
   // Generate destination box points
   const double spacing = (MAX_X_COORD - MIN_X_COORD)/(box_labels.size() + 1);
-  for (int i = 0; i < box_labels.size(); i++)
+  for (auto i = 0u; i < box_labels.size(); i++)
   {
     const gz::math::Vector3d point = gz::math::Vector3d(spacing*(i + 1) + MIN_X_COORD, 0.0, Z_COORD);
     gz::msgs::EntityFactory box_msg;
@@ -151,7 +151,7 @@ void ObjectSpawner::spawnRandomBoxes()
 
   // Generate random box points
   // visualization_msgs::MarkerArray text_markers_msg;
-  for (int i = 0; i < boxes.size(); i++)
+  for (auto i = 0u; i < boxes.size(); i++)
   {
     gz::math::Vector3d point;
     bool has_collision = true;

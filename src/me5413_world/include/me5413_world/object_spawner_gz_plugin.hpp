@@ -48,7 +48,7 @@ class ObjectSpawner :
 
   ObjectSpawner();
   virtual ~ObjectSpawner();
-  virtual void Configure(const gz::sim::Entity &_entity,
+  virtual void Configure(const gz::sim::Entity &,
                          const std::shared_ptr<const sdf::Element> &_sdf,
                          gz::sim::EntityComponentManager &_ecm,
                          gz::sim::EventManager &/*_eventMgr*/) override;
